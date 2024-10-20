@@ -60,4 +60,14 @@ Las tecnologías a utilizar para este proyecto incluyen, pero no están limitada
 1. Clonar el repositorio:
    ```bash
    git clone https://github.com/HamiltonStJJ/GestionDeVehiculosBack.git
+2. Inresar a la carpeta:
+   ```bash
    cd GestionDeVehiculosBack
+3. Instalar Dependencias:
+    ```bash
+   npm install
+4. Ejecutar el Poryecto:   
+    ```bash
+   npm start
+   npm run dev
+   
