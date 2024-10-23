@@ -44,3 +44,5 @@ mongoose
     console.error("Error conectando a MongoDB:", error);
     process.exit(1);
   });
+
+export default app;
