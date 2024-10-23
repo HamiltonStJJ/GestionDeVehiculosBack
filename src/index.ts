@@ -7,6 +7,7 @@ import cors from "cors";
 import compression from "compression";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import router from "./router";
 
 dotenv.config();
 
@@ -44,5 +45,7 @@ mongoose
     console.error("Error conectando a MongoDB:", error);
     process.exit(1);
   });
+
+app.use("/", router());
 
 export default app;
