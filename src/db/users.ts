@@ -23,6 +23,10 @@ const UsersSchema = new mongoose.Schema({
       required: true,
       select: false,
     },
+    isTemporaryPassword: {
+      type: Boolean,
+      default: false,
+    },
     salt: {
       type: String,
       select: false,
