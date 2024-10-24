@@ -1,7 +1,6 @@
 import express from "express";
 import { get, identity, merge } from "lodash";
 import { getUserBySessionToken } from "../db/users";
-import e from "express";
 
 export const isAuthenticated = async (
   req: express.Request,
@@ -58,4 +57,32 @@ export const isOwner = async (
     res.sendStatus(400);
     return;
   }
+};
+
+export const isAuthorized = (rol: string) => {
+  return async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    try {
+      const currentUserRole = get(req, "identity.rol") as string;
+
+      if (!currentUserRole) {
+        res.sendStatus(403);
+        return;
+      }
+
+      if (rol !== currentUserRole) {
+        res.sendStatus(403);
+        return;
+      }
+
+      next();
+    } catch (error) {
+      console.log(error);
+      res.sendStatus(400);
+      return;
+    }
+  };
 };
