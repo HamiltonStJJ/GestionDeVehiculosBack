@@ -59,7 +59,7 @@ export const isOwner = async (
   }
 };
 
-export const isAuthorized = (rol: string) => {
+export const isAuthorized = (roles: string[]) => {
   return async (
     req: express.Request,
     res: express.Response,
@@ -73,7 +73,7 @@ export const isAuthorized = (rol: string) => {
         return;
       }
 
-      if (rol !== currentUserRole) {
+      if (!roles.includes(currentUserRole)) {
         res.sendStatus(403);
         return;
       }

@@ -21,25 +21,44 @@ export const updateUser = async (
   res: express.Response
 ) => {
   try {
-    const { id } = req.body;
-    const { username } = req.params;
+    const { id } = req.params;
+    const { nombre, apellido, direccion, telefono, email, rol, estado } =
+      req.body;
 
-    if (!username) {
-      res.sendStatus(400);
+    if (
+      !nombre &&
+      !apellido &&
+      !direccion &&
+      !telefono &&
+      !email &&
+      !rol &&
+      !estado
+    ) {
+      res.status(400).json({ message: "No hay datos para actualizar" });
       return;
     }
 
     const user = await getUserById(id);
 
-    user.username = username;
+    if (!user) {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    if (nombre) user.nombre = nombre;
+    if (apellido) user.apellido = apellido;
+    if (direccion) user.direccion = direccion;
+    if (telefono) user.telefono = telefono;
+    if (email) user.email = email;
+    if (rol) user.rol = rol;
+    if (estado) user.estado = estado;
+
     await user.save();
 
-    res.json(user).end();
-    return;
+    res.status(200).json(user).end();
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
-    return;
+    res.status(400).json({ message: "Error al actualizar el usuario" });
   }
 };
 
