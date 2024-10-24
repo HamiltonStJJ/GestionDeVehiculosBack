@@ -4,9 +4,18 @@ import { getUserByEmail, createUser } from "../db/users";
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-      res.sendStatus(400);
+    const { cedula, nombre, apellido, direccion, telefono, email, password } =
+      req.body;
+    if (
+      !nombre ||
+      !email ||
+      !password ||
+      !cedula ||
+      !apellido ||
+      !direccion ||
+      !telefono
+    ) {
+      res.sendStatus(401);
       return;
     }
 
@@ -14,19 +23,23 @@ export const register = async (req: express.Request, res: express.Response) => {
 
     if (existingUser) {
       res.sendStatus(400);
+      res.send("El usuario ya existe");
       return;
     }
 
     const salt = random();
     const user = await createUser({
+      cedula,
+      nombre,
+      apellido,
+      direccion,
+      telefono,
       email,
-      username,
       authentication: {
         salt,
         password: authentication(salt, password),
       },
     });
-
     res.status(200).json(user).end();
     return;
   } catch (error) {

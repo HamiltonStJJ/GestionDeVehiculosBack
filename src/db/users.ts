@@ -1,9 +1,22 @@
 import mongoose from "mongoose";
 
-//* Formato que tiene un usuario para autenticar
+//! Formato que tiene un usuario
+
 const UsersSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  email: { type: String, required: true },
+  nombre: { type: String, required: true },
+  cedula: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  apellido: { type: String, required: true },
+  direccion: { type: String, required: true },
+  telefono: { type: String, required: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   authentication: {
     password: {
       type: String,
@@ -19,21 +32,49 @@ const UsersSchema = new mongoose.Schema({
       select: false,
     },
   },
+  rol: {
+    type: String,
+    enum: ["admin", "empleado", "cliente"],
+    default: "cliente",
+  },
+  estado: {
+    type: String,
+    enum: ["activo", "desactivado"],
+    default: "activo",
+  },
 });
 
-export const UserModel = mongoose.model("User", UsersSchema);
+export const UserModel = mongoose.model("Usuarios", UsersSchema);
 
-//* Métodos para trabajar con los usuarios
+//? Métodos de selección
+
 export const getUsers = () => UserModel.find();
+
 export const getUserByEmail = (email: string) => UserModel.findOne({ email });
+
 export const getUserBySessionToken = (sessionToken: string) =>
   UserModel.findOne({
     "authentication.sessionToken": sessionToken,
   });
+
 export const getUserById = (id: string) => UserModel.findById(id);
-export const createUser = (values: Record<string, any>) =>
-  new UserModel(values).save().then((user) => user.toObject());
+
+export const getUserByCedula = (cedula: string) =>
+  UserModel.findOne({ cedula, estado: "activo" });
+
+//? Métodos de inserción
+
+export const createUser = async (values: Record<string, any>) => {
+  try {
+    const user = await new UserModel(values).save();
+    return user.toObject();
+  } catch (error) {
+    throw new Error("Error al crear el usuario");
+  }
+};
+
 export const deleteUserById = (id: string) =>
-  UserModel.findByIdAndDelete({ _id: id });
+  UserModel.findByIdAndUpdate(id, { estado: "desactivado" });
+
 export const updateUserById = (id: string, values: Record<string, any>) =>
   UserModel.findByIdAndUpdate(id, values);
