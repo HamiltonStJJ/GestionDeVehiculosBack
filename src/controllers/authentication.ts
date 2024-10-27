@@ -18,15 +18,14 @@ export const register = async (req: express.Request, res: express.Response) => {
       !direccion ||
       !telefono
     ) {
-      res.sendStatus(401);
+      res.status(401).json({ message: "Faltan datos" });
       return;
     }
 
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
-      res.sendStatus(400);
-      res.send("El usuario ya existe");
+      res.status(400).json({ message: "El usuario ya existe" });
       return;
     }
 
@@ -43,11 +42,11 @@ export const register = async (req: express.Request, res: express.Response) => {
         password: authentication(salt, password),
       },
     });
-    res.status(200).json(user).end();
+    res.status(200).json(user);
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res.status(400).json({ message: "Error al crear el usuario" });
     return;
   }
 };
@@ -57,7 +56,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.sendStatus(400);
+      res.sendStatus(400).json({ message: "Datos incorrectos" });
       return;
     }
 
@@ -66,22 +65,21 @@ export const login = async (req: express.Request, res: express.Response) => {
     );
 
     if (!user) {
-      console.log("No se ha encontrado el usuario");
-      res.sendStatus(400);
+      res.sendStatus(400).json({ message: "Usuario no encontrado" });
       return;
     }
 
     const expectedHash = authentication(user.authentication.salt, password);
 
     if (user.authentication.password !== expectedHash) {
-      res.sendStatus(403);
+      res.sendStatus(403).json({ message: "Contraseña incorrecta" });
       return;
     }
 
     if (user.authentication.isTemporaryPassword) {
       console.log("Debes cambiar tu contraseña temporal");
-      // res.status(403).json({ message: "Debes cambiar tu contraseña temporal" });
-      // return;
+      res.status(403).json({ message: "Debe cambiar la contraseña temporal" });
+      return;
     }
 
     const salt = random();
@@ -93,16 +91,13 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     await user.save();
 
-    res.cookie("auth", user.authentication.sessionToken, {
-      domain: "localhost",
-      path: "/",
-    });
+    res.cookie("auth", user.authentication.sessionToken);
 
-    res.status(200).json(user).end();
+    res.status(200).json(user);
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res.sendStatus(400).json({ message: "Error al iniciar sesión" });
     return;
   }
 };
@@ -115,7 +110,7 @@ export const requestPasswordReset = async (
     const { email } = req.body;
 
     if (!email) {
-      res.sendStatus(400);
+      res.sendStatus(400).json({ message: "Falta el email" });
       return;
     }
 
@@ -124,7 +119,7 @@ export const requestPasswordReset = async (
     );
 
     if (!user) {
-      res.sendStatus(404);
+      res.sendStatus(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
@@ -145,7 +140,9 @@ export const requestPasswordReset = async (
     res.status(200).json({ message: "Correo de recuperación enviado" });
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res
+      .sendStatus(400)
+      .json({ message: "Error al intentar restablecer la contraseña" });
     return;
   }
 };
@@ -174,6 +171,18 @@ export const changePassword = async (
     res.status(200).json({ message: "Contraseña cambiada exitosamente" });
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res.sendStatus(400).json({ message: "Error al cambiar la contraseña" });
+  }
+};
+
+export const logout = async (req: express.Request, res: express.Response) => {
+  try {
+    res.clearCookie("auth");
+    res.status(200).json({ message: "Sesión cerrada" });
+    return;
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(400).json({ message: "Error al cerrar la sesión" });
+    return;
   }
 };
