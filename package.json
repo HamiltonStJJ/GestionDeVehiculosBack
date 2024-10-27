@@ -7,7 +7,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon",
     "build": "tsc",
-    "test": "jest --verbose",
+    "test": "jest",
     "test:watch": "jest --watch"
   },
   "keywords": [],
