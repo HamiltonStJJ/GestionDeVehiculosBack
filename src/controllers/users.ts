@@ -11,7 +11,7 @@ export const getAllUsers = async (
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res.sendStatus(400).json({ message: "Error al obtener los usuarios" });
     return;
   }
 };
@@ -70,11 +70,11 @@ export const deleteUser = async (
     const { id } = req.params;
     const deleteUser = await deleteUserById(id);
 
-    res.json(deleteUser).end();
+    res.json(deleteUser).json({ message: "Usuario eliminado" });
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400);
+    res.sendStatus(400).json({ message: "Error al eliminar el usuario" });
     return;
   }
 };
