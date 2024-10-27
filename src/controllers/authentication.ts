@@ -177,3 +177,15 @@ export const changePassword = async (
     res.sendStatus(400);
   }
 };
+
+export const logout = async (req: express.Request, res: express.Response) => {
+  try {
+    res.clearCookie("auth");
+    res.status(200).json({ message: "Sesión cerrada" });
+    return;
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(400);
+    return;
+  }
+};
