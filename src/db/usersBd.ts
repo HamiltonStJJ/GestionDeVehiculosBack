@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-//! Formato que tiene un usuario
+//ESQUEMA DE USUARIO PARA LA BD
 
 const UsersSchema = new mongoose.Schema({
   nombre: { type: String, required: true },

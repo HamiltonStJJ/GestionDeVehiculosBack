@@ -28,14 +28,14 @@ app.use(bodyParser.json());
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  //ESTA FUNCION ES PARA QUE EL PUERTO 8080
-  console.log(`La aplicacion esta corriendo en http://localhost:${port}}`);
-});
+    console.log(`La aplicacion esta corriendo en http://localhost:${port}`);
+  });
 
-if (!mongoUrl) {
-  console.log("No se ha especificado la URL de MongoDB");
-  process.exit(1);
-}
+if (!mongoUrl) 
+  {
+    console.log("No se ha especificado la URL de MongoDB");
+    process.exit(1);
+  }
 
 mongoose.Promise = Promise;
 mongoose
