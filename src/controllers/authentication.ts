@@ -1,6 +1,6 @@
 import express from "express";
 import { authentication, random } from "../helpers/password";
-import { getUserByEmail, createUser, getUserById } from "../db/usersBd";
+import { getUserByEmail, createUser, getUserById } from "../db/users";
 import { generateTemporaryPassword } from "../helpers/temporaryPassword";
 import { sendEmail } from "../helpers/mailer";
 import { get } from "lodash";
