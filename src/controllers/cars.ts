@@ -24,7 +24,11 @@ export const createCar = async (values: Record<string, any>) => {
     }
 }
 
+export const deleteCar = (placa: string) =>
+    CarModel.findByIdAndUpdate( placa, { estado: "Vendido" });
 
+export const updateUser = (placa: string, values:Record<string, any>) =>
+    CarModel.findByIdAndUpdate(placa, values);
 
 export const getAllCars = async (
     response: express.Response
@@ -40,12 +44,3 @@ export const getAllCars = async (
             return;
         }
     }
-
-
-
-export const deleteCar = (placa: string) =>
-    CarModel.findByIdAndUpdate( placa, { estado: "Vendido" });
-
-export const updateUser = (placa: string, values:Record<string, any>) =>
-    CarModel.findByIdAndUpdate(placa, values);
-    
