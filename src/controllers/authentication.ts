@@ -76,12 +76,6 @@ export const login = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    if (user.authentication.isTemporaryPassword) {
-      console.log("Debes cambiar tu contraseña temporal");
-      // res.status(403).json({ message: "Debe cambiar la contraseña temporal" });
-      // return;
-    }
-
     const salt = random();
 
     user.authentication.sessionToken = authentication(
@@ -93,7 +87,13 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     res.cookie("auth", user.authentication.sessionToken);
 
-    res.status(200).json(user);
+    if (user.authentication.isTemporaryPassword) {
+      console.log("Debes cambiar tu contraseña temporal");
+      res.status(403).json(user);
+    } else {
+      res.status(200).json(user);
+    }
+
     return;
   } catch (error) {
     console.log(error);
