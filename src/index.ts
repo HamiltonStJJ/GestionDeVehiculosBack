@@ -17,6 +17,7 @@ const mongoUrl = process.env.URL_MONGODB;
 
 app.use(
   cors({
+    origin: process.env.ORIGIN,
     credentials: true,
   })
 );
@@ -28,14 +29,13 @@ app.use(bodyParser.json());
 const server = http.createServer(app);
 
 server.listen(port, () => {
-    console.log(`La aplicacion esta corriendo en http://localhost:${port}`);
-  });
+  console.log(`La aplicacion esta corriendo en http://localhost:${port}`);
+});
 
-if (!mongoUrl) 
-  {
-    console.log("No se ha especificado la URL de MongoDB");
-    process.exit(1);
-  }
+if (!mongoUrl) {
+  console.log("No se ha especificado la URL de MongoDB");
+  process.exit(1);
+}
 
 mongoose.Promise = Promise;
 mongoose
