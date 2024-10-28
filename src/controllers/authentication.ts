@@ -56,7 +56,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.sendStatus(400).json({ message: "Datos incorrectos" });
+      res.status(400).json({ message: "Datos incorrectos" });
       return;
     }
 
@@ -65,14 +65,14 @@ export const login = async (req: express.Request, res: express.Response) => {
     );
 
     if (!user) {
-      res.sendStatus(400).json({ message: "Usuario no encontrado" });
+      res.status(400).json({ message: "Usuario no encontrado" });
       return;
     }
 
     const expectedHash = authentication(user.authentication.salt, password);
 
     if (user.authentication.password !== expectedHash) {
-      res.sendStatus(403).json({ message: "Contraseña incorrecta" });
+      res.status(403).json({ message: "Contraseña incorrecta" });
       return;
     }
 
@@ -97,7 +97,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400).json({ message: "Error al iniciar sesión" });
+    res.status(400).json({ message: "Error al iniciar sesión" });
     return;
   }
 };
@@ -110,7 +110,7 @@ export const requestPasswordReset = async (
     const { email } = req.body;
 
     if (!email) {
-      res.sendStatus(400).json({ message: "Falta el email" });
+      res.status(400).json({ message: "Falta el email" });
       return;
     }
 
@@ -119,7 +119,7 @@ export const requestPasswordReset = async (
     );
 
     if (!user) {
-      res.sendStatus(404).json({ message: "Usuario no encontrado" });
+      res.status(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
@@ -141,7 +141,7 @@ export const requestPasswordReset = async (
   } catch (error) {
     console.log(error);
     res
-      .sendStatus(400)
+      .status(400)
       .json({ message: "Error al intentar restablecer la contraseña" });
     return;
   }
@@ -171,7 +171,7 @@ export const changePassword = async (
     res.status(200).json({ message: "Contraseña cambiada exitosamente" });
   } catch (error) {
     console.log(error);
-    res.sendStatus(400).json({ message: "Error al cambiar la contraseña" });
+    res.status(400).json({ message: "Error al cambiar la contraseña" });
   }
 };
 
@@ -182,7 +182,7 @@ export const logout = async (req: express.Request, res: express.Response) => {
     return;
   } catch (error) {
     console.log(error);
-    res.sendStatus(400).json({ message: "Error al cerrar la sesión" });
+    res.status(400).json({ message: "Error al cerrar la sesión" });
     return;
   }
 };
