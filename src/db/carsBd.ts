@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 //ESQUEMA PARA LOS CARROS EN LA BD
-
 const CarSchema = new mongoose.Schema
 ({
     nombre: { type: String, required: true },
