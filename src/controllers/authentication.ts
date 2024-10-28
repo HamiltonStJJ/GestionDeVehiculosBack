@@ -78,8 +78,8 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     if (user.authentication.isTemporaryPassword) {
       console.log("Debes cambiar tu contraseña temporal");
-      res.status(403).json({ message: "Debe cambiar la contraseña temporal" });
-      return;
+      // res.status(403).json({ message: "Debe cambiar la contraseña temporal" });
+      // return;
     }
 
     const salt = random();
