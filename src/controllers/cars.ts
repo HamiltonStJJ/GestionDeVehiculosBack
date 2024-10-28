@@ -67,8 +67,16 @@ export const updateUser = async (
     res.status(400).json({ message: "Falta la placa" });
     return;
   }
-  const { nombre, marca, modelo, anio, color, kilometrage, tipoCombustible } =
-    req.body;
+  const {
+    nombre,
+    marca,
+    modelo,
+    anio,
+    color,
+    imagen,
+    kilometrage,
+    tipoCombustible,
+  } = req.body;
 
   if (
     !nombre &&
@@ -76,6 +84,7 @@ export const updateUser = async (
     !modelo &&
     !anio &&
     !color &&
+    !imagen &&
     !kilometrage &&
     !tipoCombustible
   ) {
@@ -95,6 +104,7 @@ export const updateUser = async (
   if (modelo) car.modelo = modelo;
   if (anio) car.anio = anio;
   if (color) car.color = color;
+  if (imagen) car.imagen = imagen;
   if (kilometrage) car.kilometrage = kilometrage;
   if (tipoCombustible) car.tipoCombustible = tipoCombustible;
 
