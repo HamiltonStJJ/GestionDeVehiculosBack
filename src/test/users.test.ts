@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "../index";
-import { getUserById, deleteUserById, getUsers } from "../db/users";
+import { getUserById, deleteUserById, getUsers } from "../db/usersBd";
 
 jest.mock("../db/users");
 
