@@ -15,7 +15,7 @@ jest.mock("../helpers/password");
 jest.mock("../helpers/temporaryPassword");
 jest.mock("../helpers/mailer");
 
-describe("User Controller", () => {
+describe("Controlador de autenticación de usuarios", () => {
   let req: any;
   let res: any;
 
@@ -30,14 +30,14 @@ describe("User Controller", () => {
     jest.clearAllMocks();
   });
 
-  describe("register", () => {
-    it("should return 401 if required data is missing", async () => {
+  describe("Registro", () => {
+    it("Debería retornar 400 si la información requerida no está presente", async () => {
       await register(req, res);
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({ message: "Faltan datos" });
     });
 
-    it("should return 400 if user already exists", async () => {
+    it("Debería retornar 400 si el usuario ya existe", async () => {
       (getUserByEmail as jest.Mock).mockResolvedValue(true);
       req.body = {
         email: "test@example.com",
@@ -55,7 +55,7 @@ describe("User Controller", () => {
       });
     });
 
-    it("should return 200 and create a user successfully", async () => {
+    it("Debería retornar 200 y crear un usuario exitosamente", async () => {
       (getUserByEmail as jest.Mock).mockResolvedValue(null);
       (createUser as jest.Mock).mockResolvedValue({ id: "userId" });
       req.body = {
@@ -73,14 +73,14 @@ describe("User Controller", () => {
     });
   });
 
-  describe("login", () => {
-    it("should return 400 if required data is missing", async () => {
+  describe("Inicio de sesión", () => {
+    it("Debería retornar 400 si los datos requeridos no están presentes", async () => {
       await login(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ message: "Datos incorrectos" });
     });
 
-    it("should return 400 if user is not found", async () => {
+    it("Debería retornar 400 si el usuario no se encuentra", async () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(null),
       });
@@ -94,7 +94,7 @@ describe("User Controller", () => {
       });
     });
 
-    it("should return 403 if password is incorrect", async () => {
+    it("Debería retornar 403 si la contraseña es incorrecta", async () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({
           authentication: { salt: "salt", password: "wrongHash" },
@@ -114,14 +114,14 @@ describe("User Controller", () => {
     });
   });
 
-  describe("requestPasswordReset", () => {
-    it("should return 400 if email is missing", async () => {
+  describe("Recuperación de contraseña", () => {
+    it("Debería retornar 400 si falta el email", async () => {
       await requestPasswordReset(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ message: "Falta el email" });
     });
 
-    it("should return 404 if user is not found", async () => {
+    it("Debería retornar 404 si el usuario no se encuentra", async () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(null),
       });
@@ -136,7 +136,7 @@ describe("User Controller", () => {
       });
     });
 
-    it("should send a password reset email successfully", async () => {
+    it("Debería enviar un correo de recuperación de contraseña exitosamente", async () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({
           email: "test@example.com",
@@ -169,8 +169,8 @@ describe("User Controller", () => {
     });
   });
 
-  describe("changePassword", () => {
-    it("should return 400 if new password is missing", async () => {
+  describe("Cambio de contraseña", () => {
+    it("Debería retornar 400 si falta la nueva contraseña", async () => {
       await changePassword(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -178,7 +178,7 @@ describe("User Controller", () => {
       });
     });
 
-    it("should change the password successfully", async () => {
+    it("Debería cambiar la contraseña exitosamente", async () => {
       req.body = { newPassword: "newPassword" };
       req.identity = { _id: "userId" };
 
@@ -204,8 +204,8 @@ describe("User Controller", () => {
     });
   });
 
-  describe("logout", () => {
-    it("should clear the auth cookie and return 200", async () => {
+  describe("Cerrar sesión", () => {
+    it("Debería borrar el cookie de autenticación y retornar 200", async () => {
       await logout(req, res);
       expect(res.clearCookie).toHaveBeenCalledWith("auth");
       expect(res.status).toHaveBeenCalledWith(200);

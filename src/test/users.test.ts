@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 
 jest.mock("../db/usersBd");
 
-describe("getAllUsers", () => {
+describe("Controlador de usuarios", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
 
@@ -17,28 +17,30 @@ describe("getAllUsers", () => {
     };
   });
 
-  it("should return a list of users", async () => {
-    const usersMock = [{ id: 1, nombre: "Test User" }];
-    (getUsers as jest.Mock).mockResolvedValue(usersMock);
+  describe("Usuarios", () => {
+    it("Debería retornar una lista de usuarios", async () => {
+      const usersMock = [{ id: 1, nombre: "Test User" }];
+      (getUsers as jest.Mock).mockResolvedValue(usersMock);
 
-    await getAllUsers(req as Request, res as Response);
+      await getAllUsers(req as Request, res as Response);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(usersMock);
-  });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(usersMock);
+    });
 
-  it("should handle errors and return status 400", async () => {
-    (getUsers as jest.Mock).mockRejectedValue(new Error("Error"));
+    it("Debería manejar errores y retornar status 400", async () => {
+      (getUsers as jest.Mock).mockRejectedValue(new Error("Error"));
 
-    await getAllUsers(req as Request, res as Response);
+      await getAllUsers(req as Request, res as Response);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Error al obtener los usuarios",
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Error al obtener los usuarios",
+      });
     });
   });
 
-  describe("updateUser", () => {
+  describe("Actualización de usuario", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
 
@@ -50,7 +52,7 @@ describe("getAllUsers", () => {
       };
     });
 
-    it("should return 400 if no data to update is provided", async () => {
+    it("Debería retornar 400 si no se proporcionan datos para actualizar", async () => {
       await updateUser(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -59,7 +61,7 @@ describe("getAllUsers", () => {
       });
     });
 
-    it("should return 404 if user is not found", async () => {
+    it("Debería retornar 404 si el usuario no se encuentra", async () => {
       (getUserById as jest.Mock).mockResolvedValue(null);
       req.body = { nombre: "Nuevo Nombre" };
 
@@ -71,7 +73,7 @@ describe("getAllUsers", () => {
       });
     });
 
-    it("should update the user and return status 200", async () => {
+    it("Debería actualizar el usuario y retornar status 200", async () => {
       const userMock = {
         nombre: "Old Name",
         save: jest.fn().mockResolvedValue(true),
@@ -87,7 +89,7 @@ describe("getAllUsers", () => {
       expect(res.json).toHaveBeenCalledWith(userMock);
     });
 
-    it("should handle errors and return status 400", async () => {
+    it("Debería capturar errores y retornar status 400", async () => {
       req.body = { nombre: "Nuevo Nombre" };
 
       (getUserById as jest.Mock).mockRejectedValue(new Error("Error"));
@@ -101,7 +103,7 @@ describe("getAllUsers", () => {
     });
   });
 
-  describe("deleteUser", () => {
+  describe("Eliminación de usuario", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
 
@@ -113,7 +115,7 @@ describe("getAllUsers", () => {
       };
     });
 
-    it("should delete a user and return status 200", async () => {
+    it("Debería eliminar un usuario y retornar status 200", async () => {
       const deleteUserMock = { message: "Usuario eliminado" };
       (deleteUserById as jest.Mock).mockResolvedValue(deleteUserMock);
 
@@ -122,7 +124,7 @@ describe("getAllUsers", () => {
       expect(res.json).toHaveBeenCalledWith(deleteUserMock);
     });
 
-    it("should handle errors and return status 400", async () => {
+    it("Debería capturar errores y retornar status 400", async () => {
       (deleteUserById as jest.Mock).mockRejectedValue(new Error("Error"));
 
       await deleteUser(req as Request, res as Response);
