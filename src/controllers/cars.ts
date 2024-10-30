@@ -6,15 +6,20 @@ export const getAllCars = async (req: express.Request,res: express.Response) =>
 {
   try {
     const cars = await CarModel.find();
-    res.status(200).json(cars).end();
-    return;
-  } catch (error) {
-    console.log(error.getMessage());
-    res.status(400).json({ message: "Error al obtener los carros" });
-    return;
-  }
-};
+    
+    if (cars.length === 0) 
+      {
+        res.status(404).json({ message: "No hay datos de los Autos en tu BD" });
+        return;
+    }
 
+    res.status(200).json(cars).end();
+  } catch (error) 
+    {
+      res.status(500).json({ message: "Error al obtener los carros" });
+      return;
+    }
+};
 
 
 export const getCarByPlaca = async (req: express.Request, res: express.Response) => 
@@ -43,12 +48,23 @@ export const getCarByPlaca = async (req: express.Request, res: express.Response)
 
 export const createCar = async (req: express.Request,res: express.Response) => 
 {
-  try {
+  try 
+  {
+    const { placa} = req.body;
+    const carExist = await CarModel.findOne({ placa });
+
+    if (carExist) 
+      {
+        res.status(400).json({ message: "El carro ya se encuentra registrado" });
+        return;
+      }
+
     const newCar = req.body;
     const car = await new CarModel(newCar).save();
-    res.status(200).json(car.toObject());
+
+    res.status(200).json({ message: "Carro creado con éxito", car });
   } catch (error) {
-    res.status(400).json({ message: "Error al crear el carro" });
+    res.status(500).json({ message: "Error al crear el carro" });
   }
 };
 
