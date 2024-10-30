@@ -7,10 +7,9 @@ export const getAllUsers = async (
 ) => {
   try {
     const users = await getUsers();
-    res.status(200).json(users).end();
+    res.status(200).json(users);
     return;
   } catch (error) {
-    console.log(error);
     res.status(400).json({ message: "Error al obtener los usuarios" });
     return;
   }
@@ -55,9 +54,8 @@ export const updateUser = async (
 
     await user.save();
 
-    res.status(200).json(user).end();
+    res.status(200).json(user);
   } catch (error) {
-    console.log(error);
     res.status(400).json({ message: "Error al actualizar el usuario" });
   }
 };
@@ -69,11 +67,10 @@ export const deleteUser = async (
   try {
     const { id } = req.params;
     const deleteUser = await deleteUserById(id);
-
-    res.json(deleteUser).json({ message: "Usuario eliminado" });
+    deleteUser;
+    res.json({ message: "Usuario eliminado" });
     return;
   } catch (error) {
-    console.log(error);
     res.status(400).json({ message: "Error al eliminar el usuario" });
     return;
   }
