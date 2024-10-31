@@ -112,6 +112,63 @@ describe("Controlador de autenticación de usuarios", () => {
         message: "Contraseña incorrecta",
       });
     });
+
+    it("Debería iniciar sesión correctamente y establecer la cookie de sesión", async () => {
+      req.body = { email: "test@example.com", password: "correctpassword" };
+
+      const mockUser = {
+        _id: "userId",
+        authentication: {
+          salt: "salt",
+          password: "hashedpassword",
+          sessionToken: "session",
+          isTemporaryPassword: false,
+        },
+        save: jest.fn().mockResolvedValue(true),
+      };
+
+      (getUserByEmail as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser),
+      });
+      (authentication as jest.Mock)
+        .mockImplementationOnce(() => "hashedpassword")
+        .mockImplementationOnce(() => "sessionToken");
+
+      await login(req, res);
+
+      expect(mockUser.authentication.sessionToken).toBe("sessionToken");
+      expect(res.cookie).toHaveBeenCalledWith("auth", "sessionToken");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockUser);
+    });
+
+    it("Debería responder con 403 si el usuario tiene una contraseña temporal", async () => {
+      req.body = { email: "test@example.com", password: "correctpassword" };
+
+      const mockUser = {
+        _id: "userId",
+        authentication: {
+          salt: "salt",
+          password: "hashedpassword",
+          sessionToken: "session",
+          isTemporaryPassword: true,
+        },
+        save: jest.fn().mockResolvedValue(true),
+      };
+
+      (getUserByEmail as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser),
+      });
+      (authentication as jest.Mock)
+        .mockImplementationOnce(() => "hashedpassword")
+        .mockImplementationOnce(() => "sessionToken");
+
+      await login(req, res);
+
+      expect(mockUser.authentication.sessionToken).toBe("sessionToken");
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(mockUser);
+    });
   });
 
   describe("Recuperación de contraseña", () => {
