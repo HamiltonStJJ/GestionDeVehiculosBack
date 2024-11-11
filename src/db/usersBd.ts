@@ -77,8 +77,10 @@ export const createUser = async (values: Record<string, any>) => {
   }
 };
 
-export const deleteUserById = (id: string) =>
-  UserModel.findByIdAndUpdate(id, { estado: "desactivado" });
+export const deleteUserByCedula = (cedula: string) =>
+  UserModel.findOneAndUpdate({ cedula }, { estado: "desactivado" });
 
-export const updateUserById = (id: string, values: Record<string, any>) =>
-  UserModel.findByIdAndUpdate(id, values);
+export const updateUserByCedula = (
+  cedula: string,
+  values: Record<string, any>
+) => UserModel.findOneAndUpdate({ cedula }, values);

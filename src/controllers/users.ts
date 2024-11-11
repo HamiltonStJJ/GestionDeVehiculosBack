@@ -1,5 +1,5 @@
 import express from "express";
-import { getUsers, deleteUserById, getUserById } from "../db/usersBd";
+import { getUsers, deleteUserByCedula, getUserById } from "../db/usersBd";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -66,7 +66,7 @@ export const deleteUser = async (
 ) => {
   try {
     const { id } = req.params;
-    const deleteUser = await deleteUserById(id);
+    const deleteUser = await deleteUserByCedula(id);
     deleteUser;
     res.json({ message: "Usuario eliminado" });
     return;

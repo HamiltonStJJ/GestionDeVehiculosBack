@@ -1,5 +1,5 @@
 import { getAllUsers, updateUser, deleteUser } from "../controllers/users";
-import { getUsers, deleteUserById, getUserById } from "../db/usersBd";
+import { getUsers, deleteUserByCedula, getUserById } from "../db/usersBd";
 import { Request, Response } from "express";
 
 jest.mock("../db/usersBd");
@@ -117,7 +117,7 @@ describe("Controlador de usuarios", () => {
 
     it("Debería eliminar un usuario y retornar status 200", async () => {
       const deleteUserMock = { message: "Usuario eliminado" };
-      (deleteUserById as jest.Mock).mockResolvedValue(deleteUserMock);
+      (deleteUserByCedula as jest.Mock).mockResolvedValue(deleteUserMock);
 
       await deleteUser(req as Request, res as Response);
 
@@ -125,7 +125,7 @@ describe("Controlador de usuarios", () => {
     });
 
     it("Debería capturar errores y retornar status 400", async () => {
-      (deleteUserById as jest.Mock).mockRejectedValue(new Error("Error"));
+      (deleteUserByCedula as jest.Mock).mockRejectedValue(new Error("Error"));
 
       await deleteUser(req as Request, res as Response);
 
