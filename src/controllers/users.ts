@@ -1,5 +1,5 @@
 import express from "express";
-import { getUsers, deleteUserById, getUserById } from "../db/usersBd";
+import { getUsers, deleteUserByCedula, getUserByCedula } from "../db/usersBd";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -15,12 +15,30 @@ export const getAllUsers = async (
   }
 };
 
+export const getUser = async (req: express.Request, res: express.Response) => {
+  try {
+    const { cedula } = req.params;
+    const user = await getUserByCedula(cedula);
+
+    if (!user) {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    res.status(200).json(user);
+    return;
+  } catch (error) {
+    res.status(400).json({ message: "Error al obtener el usuario" });
+    return;
+  }
+};
+
 export const updateUser = async (
   req: express.Request,
   res: express.Response
 ) => {
   try {
-    const { id } = req.params;
+    const { cedula } = req.params;
     const { nombre, apellido, direccion, telefono, email, rol, estado } =
       req.body;
 
@@ -37,7 +55,7 @@ export const updateUser = async (
       return;
     }
 
-    const user = await getUserById(id);
+    const user = await getUserByCedula(cedula);
 
     if (!user) {
       res.status(404).json({ message: "Usuario no encontrado" });
@@ -65,8 +83,8 @@ export const deleteUser = async (
   res: express.Response
 ) => {
   try {
-    const { id } = req.params;
-    const deleteUser = await deleteUserById(id);
+    const { cedula } = req.params;
+    const deleteUser = await deleteUserByCedula(cedula);
     deleteUser;
     res.json({ message: "Usuario eliminado" });
     return;
