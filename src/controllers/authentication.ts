@@ -1,32 +1,41 @@
 import express from "express";
 import { authentication, random } from "../helpers/password";
-import { getUserByEmail, createUser, getUserById } from "../db/usersBd";
+import { getUserByEmail, createUser, getUserById, getUserByCedula } from "../db/usersBd";
 import { generateTemporaryPassword } from "../helpers/temporaryPassword";
 import { sendEmail } from "../helpers/mailer";
 import { get } from "lodash";
+import { validateID } from "../helpers/validateID";
 
-export const register = async (req: express.Request, res: express.Response) => 
-{
-  try
-  {
-    const { cedula, nombre, apellido, direccion, telefono, email, password } =
-      req.body;
-    if (!nombre ||!email ||!password ||!cedula ||!apellido ||!direccion || !telefono) 
-      {
-        res.status(401).json({ message: "Faltan datos" });
-        return;
-      }
+export const register = async (req: express.Request, res: express.Response) => {
+  try {
+    const { cedula, nombre, apellido, direccion, telefono, email, password } = req.body;
+    if (!nombre || !email || !password || !cedula || !apellido || !direccion || !telefono) {
+      res.status(401).json({ message: "Faltan datos" });
+      return;
+    }
+
+    if (!validateID(cedula)) {
+      res.status(402).json({ message: "El cedula no es válida" });
+      return;
+    }
 
     const existingUser = await getUserByEmail(email);
+    const existingUserByCedula = await getUserByCedula(cedula);
 
-    if (existingUser) 
-      {
-        res.status(400).json({ message: "El usuario ya existe" });
-        return;
-      }
+    if (existingUser || existingUserByCedula) {
+      res.status(400).json({ message: "El usuario ya existe" });
+      return;
+    }
 
-      const salt = random();
-      const user = await createUser({cedula,nombre,apellido,direccion,telefono,email,authentication: {
+    const salt = random();
+    const user = await createUser({
+      cedula,
+      nombre,
+      apellido,
+      direccion,
+      telefono,
+      email,
+      authentication: {
         salt,
         password: authentication(salt, password),
       },
@@ -40,52 +49,45 @@ export const register = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const login = async (req: express.Request, res: express.Response) => 
-{
-  try 
-  {
+export const login = async (req: express.Request, res: express.Response) => {
+  try {
     const { email, password } = req.body;
 
-    if (!email || !password) 
-      {
-        res.status(400).json({ message: "Datos incorrectos" });
-        return;
-      }
+    if (!email || !password) {
+      res.status(400).json({ message: "Datos incorrectos" });
+      return;
+    }
 
-    const user = await getUserByEmail(email).select("+authentication.salt +authentication.password +authentication.isTemporaryPassword");
+    const user = await getUserByEmail(email).select(
+      "+authentication.salt +authentication.password +authentication.isTemporaryPassword"
+    );
 
-    if (!user) 
-      {
-        res.status(400).json({ message: "Usuario no encontrado" });
-        return;
-      }
+    if (!user) {
+      res.status(400).json({ message: "Usuario no encontrado" });
+      return;
+    }
 
     const expectedHash = authentication(user.authentication.salt, password);
 
-    if (user.authentication.password !== expectedHash) 
-      {
-        res.status(403).json({ message: "Contraseña incorrecta" });
-        return;
-      }
+    if (user.authentication.password !== expectedHash) {
+      res.status(403).json({ message: "Contraseña incorrecta" });
+      return;
+    }
 
     const salt = random();
 
-    user.authentication.sessionToken = authentication(
-      salt,
-      user._id.toString()
-    );
+    user.authentication.sessionToken = authentication(salt, user._id.toString());
 
     await user.save();
 
     res.cookie("auth", user.authentication.sessionToken);
 
-    if (user.authentication.isTemporaryPassword) 
-      {
-        console.log("Debes cambiar tu contraseña temporal");
-        res.status(403).json(user);
-      } else {
-        res.status(200).json(user);
-      }
+    if (user.authentication.isTemporaryPassword) {
+      console.log("Debes cambiar tu contraseña temporal");
+      res.status(403).json(user);
+    } else {
+      res.status(200).json(user);
+    }
 
     return;
   } catch (error) {
@@ -95,10 +97,8 @@ export const login = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const requestPasswordReset = async (req: express.Request,res: express.Response) => 
-{
-  try 
-  {
+export const requestPasswordReset = async (req: express.Request, res: express.Response) => {
+  try {
     const { email } = req.body;
 
     if (!email) {
@@ -132,17 +132,12 @@ export const requestPasswordReset = async (req: express.Request,res: express.Res
     res.status(200).json({ message: "Correo de recuperación enviado" });
   } catch (error) {
     console.log(error);
-    res
-      .status(400)
-      .json({ message: "Error al intentar restablecer la contraseña" });
+    res.status(400).json({ message: "Error al intentar restablecer la contraseña" });
     return;
   }
 };
 
-export const changePassword = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const changePassword = async (req: express.Request, res: express.Response) => {
   try {
     const { newPassword } = req.body;
     const userId = get(req, "identity._id");
