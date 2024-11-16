@@ -9,8 +9,7 @@ const CarSchema = new mongoose.Schema({
   color: { type: String, required: true },
   imagen: { type: String, required: true },
   placa: { type: String, required: true },
-  precio: { type: Number, required: true },
-  kilometrage: { type: Number, default: 0 },
+  kilometraje: { type: Number, default: 0 },
   tipoCombustible: {
     type: String,
     enum: ["Gasolina", "Diesel", "Hibrido", "Electrico"],
@@ -28,6 +27,12 @@ const CarSchema = new mongoose.Schema({
     default: "Disponible",
   },
   UltimoChequeo: { type: Date, required: false },
+  tarifas: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tarifas",
+    },
+  ],
 });
 
 export const CarModel = mongoose.model("Carros", CarSchema);
