@@ -18,6 +18,6 @@ export default (router: express.Router) => {
     "/cars/:placa",
     isAuthenticated,
     isAuthorized(["admin", "empleado"]),
-    deleteCar
+    deleteCar,
   );
 };

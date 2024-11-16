@@ -1,48 +1,49 @@
 import express from "express";
 import { CarModel } from "../db/carsBd";
 
-
-export const getAllCars = async (req: express.Request,res: express.Response) => 
-{
+export const getAllCars = async (req: express.Request, res: express.Response) => {
   try {
-    const cars = await CarModel.find();
-    res.status(200).json(cars).end();
-    return;
+    const cars = await CarModel.find().populate("tarifas");
+    res.status(200).json(cars);
   } catch (error) {
-    console.log(error.getMessage());
+    console.error(error);
     res.status(400).json({ message: "Error al obtener los carros" });
-    return;
   }
 };
 
-export const getCarByPlaca = (req: express.Request, res: express.Response) => {
+export const getCarByPlaca = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
+
   if (!placa) {
-    res.status(400).json({ message: "No se hay placa" });
+    res.status(400).json({ message: "No se ha proporcionado la placa" });
     return;
   }
-  const car = CarModel.findOne({ placa });
-  if (!car) {
-    res.status(404).json({ message: "No se encontró el carro" });
-    return;
+
+  try {
+    const car = await CarModel.findOne({ placa }).populate("tarifas");
+    if (!car) {
+      res.status(404).json({ message: "No se encontró el carro" });
+      return;
+    }
+    res.status(200).json(car);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ message: "Error al obtener el carro" });
   }
-  res.status(200).json(car);
-  return;
 };
 
-export const createCar = async (req: express.Request,res: express.Response) => 
-{
+export const createCar = async (req: express.Request, res: express.Response) => {
   try {
     const newCar = req.body;
     const car = await new CarModel(newCar).save();
-    res.status(200).json(car.toObject());
+    res.status(200).json(car);
   } catch (error) {
+    console.error(error);
     res.status(400).json({ message: "Error al crear el carro" });
   }
 };
 
-export const deleteCar = async (req: express.Request,res: express.Response) => 
-{
+export const deleteCar = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
   if (!placa) {
     res.status(400).json({ message: "No se ha encontrado el placa" });
@@ -52,28 +53,25 @@ export const deleteCar = async (req: express.Request,res: express.Response) =>
   res.status(200).json({ message: "El carro se elimino con éxito" });
 };
 
-export const updateUser = async (req: express.Request,res: express.Response) => 
-{
+export const updateUser = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
   if (!placa) {
     res.status(400).json({ message: "Falta la placa" });
     return;
   }
-  const {nombre,marca,modelo,anio,color,imagen,kilometrage,tipoCombustible,} = req.body;
+  const { nombre, marca, modelo, anio, color, imagen, kilometraje, tipoCombustible } = req.body;
 
-  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometrage && !tipoCombustible) 
-    {
-      res.status(400).json({ message: "No hay datos para actualizar " });
-      return;
-    }
+  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometraje && !tipoCombustible) {
+    res.status(400).json({ message: "No hay datos para actualizar " });
+    return;
+  }
 
   const car = await CarModel.findOne({ placa });
 
-  if (!car) 
-    {
-      res.status(400).json({ message: "No se ha encontrado el carro" });
-      return;
-    }
+  if (!car) {
+    res.status(400).json({ message: "No se ha encontrado el carro" });
+    return;
+  }
 
   if (nombre) car.nombre = nombre;
   if (marca) car.marca = marca;
@@ -81,7 +79,7 @@ export const updateUser = async (req: express.Request,res: express.Response) =>
   if (anio) car.anio = anio;
   if (color) car.color = color;
   if (imagen) car.imagen = imagen;
-  if (kilometrage) car.kilometrage = kilometrage;
+  if (kilometraje) car.kilometraje = kilometraje;
   if (tipoCombustible) car.tipoCombustible = tipoCombustible;
 
   await car.save();
