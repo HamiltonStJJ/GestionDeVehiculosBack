@@ -33,6 +33,12 @@ const CarSchema = new mongoose.Schema({
       ref: "Tarifas",
     },
   ],
+  mantenimientos: [
+    {
+      fecha: { type: Date, required: true },
+      descripcion: { type: String, required: true },
+    },
+  ],
 });
 
 export const CarModel = mongoose.model("Carros", CarSchema);
