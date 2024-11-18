@@ -53,7 +53,7 @@ export const deleteCar = async (req: express.Request, res: express.Response) => 
   res.status(200).json({ message: "El carro se elimino con éxito" });
 };
 
-export const updateUser = async (req: express.Request, res: express.Response) => {
+export const updateCar = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
   if (!placa) {
     res.status(400).json({ message: "Falta la placa" });
