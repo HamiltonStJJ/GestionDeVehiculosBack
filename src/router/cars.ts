@@ -1,5 +1,5 @@
 import express from "express";
-import { getCarByPlaca, createCar, deleteCar, updateCar, getAllCars } from "../controllers/cars";
+import { getCarByPlaca, createCar, deleteCar, updateCar, getAllCars, updateCarStatus } from "../controllers/cars";
 
 import { isAuthenticated, isAuthorized } from "../middlewares";
 import { addMaintenance, deleteMaintenance, getMaintenance, updateMaintenance } from "../controllers/maintenance";
@@ -11,8 +11,10 @@ export default (router: express.Router) => {
   router.put("/cars/:placa", isAuthenticated, updateCar);
   router.delete("/cars/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), deleteCar);
 
-  router.get("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), getMaintenance);
-  router.post("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), addMaintenance);
-  router.put("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), updateMaintenance);
-  router.delete("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), deleteMaintenance);
+  router.put("/cars/estado/:placa", isAuthenticated, isAuthorized(["admin", "empleado"]), updateCarStatus);
+
+  router.get("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), getMaintenance);
+  router.post("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), addMaintenance);
+  router.put("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), updateMaintenance);
+  router.delete("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), deleteMaintenance);
 };
