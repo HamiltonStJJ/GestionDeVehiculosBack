@@ -55,35 +55,85 @@ export const deleteCar = async (req: express.Request, res: express.Response) => 
 
 export const updateCar = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
+
   if (!placa) {
     res.status(400).json({ message: "Falta la placa" });
     return;
   }
-  const { nombre, marca, modelo, anio, color, imagen, kilometraje, tipoCombustible } = req.body;
 
-  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometraje && !tipoCombustible) {
-    res.status(400).json({ message: "No hay datos para actualizar " });
+  const { nombre, marca, modelo, anio, color, imagen, kilometraje, tipoCombustible, transmision, numeroAsientos, tarifas } = req.body;
+
+  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometraje && !tipoCombustible && !transmision && !numeroAsientos && !tarifas) {
+    res.status(400).json({ message: "No hay datos para actualizar" });
     return;
   }
 
-  const car = await CarModel.findOne({ placa });
+  try {
+    const car = await CarModel.findOne({ placa });
 
-  if (!car) {
-    res.status(400).json({ message: "No se ha encontrado el carro" });
+    if (!car) {
+      res.status(404).json({ message: "No se ha encontrado el carro" });
+      return;
+    }
+
+    if (nombre) car.nombre = nombre;
+    if (marca) car.marca = marca;
+    if (modelo) car.modelo = modelo;
+    if (anio) car.anio = anio;
+    if (color) car.color = color;
+    if (imagen) car.imagen = imagen;
+    if (kilometraje) car.kilometraje = kilometraje;
+    if (tipoCombustible) car.tipoCombustible = tipoCombustible;
+    if (transmision) car.transmision = transmision;
+    if (numeroAsientos) car.numeroAsientos = numeroAsientos;
+
+    if (tarifas) {
+      if (!Array.isArray(tarifas)) {
+        res.status(400).json({ message: "Las tarifas deben ser un arreglo de IDs válidos" });
+        return;
+      }
+      car.tarifas = tarifas;
+    }
+
+    await car.save();
+
+    res.status(200).json({ message: "El carro se actualizó con éxito", car });
+  } catch (error) {
+    console.error("Error al actualizar el carro:", error);
+    res.status(500).json({ message: "Error al actualizar el carro" });
+  }
+};
+
+export const updateCarStatus = async (req: express.Request, res: express.Response) => {
+  const { placa } = req.params;
+  const { estado } = req.body;
+
+  if (!placa || !estado) {
+    res.status(400).json({ message: "Falta la placa o el estado" });
     return;
   }
 
-  if (nombre) car.nombre = nombre;
-  if (marca) car.marca = marca;
-  if (modelo) car.modelo = modelo;
-  if (anio) car.anio = anio;
-  if (color) car.color = color;
-  if (imagen) car.imagen = imagen;
-  if (kilometraje) car.kilometraje = kilometraje;
-  if (tipoCombustible) car.tipoCombustible = tipoCombustible;
+  const estadosValidos = ["Disponible", "Alquilado", "Eliminado"];
+  if (!estadosValidos.includes(estado)) {
+    res.status(400).json({ message: "Estado inválido. Los valores válidos son: 'Disponible', 'Alquilado' o 'Eliminado'" });
+    return;
+  }
 
-  await car.save();
+  try {
+    const car = await CarModel.findOne({ placa });
 
-  res.status(200).json({ message: "El carro se actualizo con éxito" });
-  return;
+    if (!car) {
+      res.status(404).json({ message: "No se ha encontrado el carro" });
+      return;
+    }
+
+    car.estado = estado;
+
+    await car.save();
+
+    res.status(200).json({ message: "Estado actualizado con éxito", car });
+  } catch (error) {
+    console.error("Error al actualizar el estado del carro:", error);
+    res.status(500).json({ message: "Error al actualizar el estado del carro" });
+  }
 };

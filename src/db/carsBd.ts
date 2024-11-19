@@ -20,7 +20,7 @@ const CarSchema = new mongoose.Schema({
     enum: ["Manual", "Automatica"],
     required: true,
   },
-  numeroPuertas: { type: Number, default: 4 },
+  numeroAsientos: { type: Number, default: 4 },
   estado: {
     type: String,
     enum: ["Disponible", "Alquilado", "Eliminado"],
