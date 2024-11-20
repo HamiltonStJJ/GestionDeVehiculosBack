@@ -15,11 +15,7 @@ export const getAllRates = async (req: express.Request, res: express.Response) =
 export const getRate = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
-    if (!id) {
-      res.status(400).json({ message: "No se envia el valor id" });
-      return;
-    }
-    const rate = RateModel.findById(id);
+    const rate = await RateModel.findById(id);
     if (!rate) {
       res.status(404).json({ message: "No se encontró la tarifa" });
       return;

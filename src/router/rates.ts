@@ -4,8 +4,8 @@ import { createRate, deleteRate, getAllRates, getRate, updateRate } from "../con
 
 export default (router: express.Router) => {
   router.get("/rates", isAuthenticated, getAllRates);
-  router.get("rates/:id", isAuthenticated, getRate);
+  router.get("/rates/:id", isAuthenticated, getRate);
   router.post("/rates", isAuthenticated, createRate);
-  router.put("/rates", isAuthenticated, updateRate);
-  router.delete("rates/:id", isAuthenticated, deleteRate);
+  router.put("/rates/:id", isAuthenticated, updateRate);
+  router.delete("/rates/:id", isAuthenticated, deleteRate);
 };
