@@ -1,5 +1,5 @@
 import express from "express";
-import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, cancelRentalById } from "../db/rentalsBd";
+import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, cancelRentalById, RentalModel } from "../db/rentalsBd";
 import { CarModel } from "../db/carsBd";
 import { getUserById } from "../db/usersBd";
 
@@ -72,14 +72,20 @@ export const getRental = async (req: express.Request, res: express.Response) => 
   }
 };
 
-export const cancelRental = async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
+export const updateRentalStatus = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  const { estado } = req.body;
 
-    const rental = await cancelRentalById(id);
+  try {
+    if (!["cancelado", "finalizado"].includes(estado)) {
+      res.status(400).json({ error: "Estado inválido. Usa 'cancelado' o 'finalizado'." });
+      return;
+    }
+
+    const rental = await RentalModel.findByIdAndUpdate(id, { estado }, { new: true });
 
     if (!rental) {
-      res.status(404).json({ message: "Alquiler no encontrado" });
+      res.status(404).json({ error: "No se encontró la renta especificada." });
       return;
     }
 
@@ -89,10 +95,10 @@ export const cancelRental = async (req: express.Request, res: express.Response) 
       await auto.save();
     }
 
-    res.status(200).json({ message: "Alquiler cancelado con éxito" });
+    res.status(200).json({ message: "Estado de la renta actualizado exitosamente.", rental });
   } catch (error) {
-    console.error("Error al cancelar el alquiler:", error);
-    res.status(500).json({ message: "Error al cancelar el alquiler" });
+    console.error("Error al actualizar el estado de la renta:", error);
+    res.status(500).json({ error: "Ocurrió un error al actualizar el estado de la renta." });
   }
 };
 

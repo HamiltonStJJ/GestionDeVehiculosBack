@@ -1,6 +1,6 @@
 import express from "express";
 import { isAuthenticated, isAuthorized } from "../middlewares";
-import { create, getRentals, getRental, cancelRental, updateRental, getRentalsByClient } from "../controllers/rentals";
+import { create, getRentals, getRental, updateRental, getRentalsByClient, updateRentalStatus } from "../controllers/rentals";
 
 export default (router: express.Router) => {
   // Obtener todos los alquileres
@@ -19,5 +19,5 @@ export default (router: express.Router) => {
   router.put("/rentals/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), updateRental);
 
   // Cancelar un alquiler
-  router.put("/rentals/cancel/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), cancelRental);
+  router.put("/rentals/status/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), updateRentalStatus);
 };
