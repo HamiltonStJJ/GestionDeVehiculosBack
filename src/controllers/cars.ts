@@ -49,7 +49,7 @@ export const deleteCar = async (req: express.Request, res: express.Response) => 
     res.status(400).json({ message: "No se ha encontrado el placa" });
     return;
   }
-  await CarModel.findByIdAndUpdate(placa, { estado: "Alquilado" });
+  await CarModel.findOneAndUpdate({ placa }, { estado: "Eliminado" });
   res.status(200).json({ message: "El carro se elimino con éxito" });
 };
 

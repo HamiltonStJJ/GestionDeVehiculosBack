@@ -15,6 +15,6 @@ export default (router: express.Router) => {
 
   router.get("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), getMaintenance);
   router.post("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), addMaintenance);
-  router.put("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), updateMaintenance);
-  router.delete("/cars/maintenance/:placa", isAuthenticated, isAuthorized(["admin"]), deleteMaintenance);
+  router.put("/cars/maintenance/:_id", isAuthenticated, isAuthorized(["admin"]), updateMaintenance);
+  router.delete("/cars/maintenance/:_id", isAuthenticated, isAuthorized(["admin"]), deleteMaintenance);
 };
