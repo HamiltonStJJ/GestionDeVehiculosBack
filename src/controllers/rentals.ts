@@ -1,5 +1,5 @@
 import express from "express";
-import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, cancelRentalById, RentalModel } from "../db/rentalsBd";
+import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, RentalModel } from "../db/rentalsBd";
 import { CarModel } from "../db/carsBd";
 import { getUserById } from "../db/usersBd";
 

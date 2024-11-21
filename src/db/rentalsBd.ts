@@ -48,6 +48,3 @@ export const createRental = (values: Record<string, any>) => new RentalModel(val
 
 // Métodos de actualización
 export const updateRentalById = (id: string, values: Record<string, any>) => RentalModel.findByIdAndUpdate(id, values, { new: true });
-
-// Métodos de eliminación (cambia estado)
-export const cancelRentalById = (id: string) => RentalModel.findByIdAndUpdate(id, { estado: "Cancelado" });
