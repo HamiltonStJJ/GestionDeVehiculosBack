@@ -23,7 +23,7 @@ const CarSchema = new mongoose.Schema({
   numeroAsientos: { type: Number, default: 4 },
   estado: {
     type: String,
-    enum: ["Disponible", "Alquilado", "Eliminado"],
+    enum: ["Disponible", "Alquilado", "Eliminado", "Mantenimiento"],
     default: "Disponible",
   },
   UltimoChequeo: { type: Date, required: false },

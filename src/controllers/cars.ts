@@ -113,9 +113,9 @@ export const updateCarStatus = async (req: express.Request, res: express.Respons
     return;
   }
 
-  const estadosValidos = ["Disponible", "Alquilado", "Eliminado"];
+  const estadosValidos = ["Disponible", "Alquilado", "Eliminado", "Mantenimiento"];
   if (!estadosValidos.includes(estado)) {
-    res.status(400).json({ message: "Estado inválido. Los valores válidos son: 'Disponible', 'Alquilado' o 'Eliminado'" });
+    res.status(400).json({ message: "Estado inválido. Los valores válidos son: 'Disponible', 'Alquilado', 'Eliminado' o 'Mantenimiento'" });
     return;
   }
 
