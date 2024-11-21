@@ -61,9 +61,9 @@ export const updateCar = async (req: express.Request, res: express.Response) => 
     return;
   }
 
-  const { nombre, marca, modelo, anio, color, imagen, kilometraje, tipoCombustible, transmision, numeroAsientos, tarifas } = req.body;
+  const { nombre, marca, modelo, anio, color, imagen, kilometraje, tipoCombustible, transmision, numeroAsientos, tarifas, UltimoChequeo, estado } = req.body;
 
-  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometraje && !tipoCombustible && !transmision && !numeroAsientos && !tarifas) {
+  if (!nombre && !marca && !modelo && !anio && !color && !imagen && !kilometraje && !tipoCombustible && !transmision && !numeroAsientos && !tarifas && !UltimoChequeo && !estado) {
     res.status(400).json({ message: "No hay datos para actualizar" });
     return;
   }
@@ -86,6 +86,15 @@ export const updateCar = async (req: express.Request, res: express.Response) => 
     if (tipoCombustible) car.tipoCombustible = tipoCombustible;
     if (transmision) car.transmision = transmision;
     if (numeroAsientos) car.numeroAsientos = numeroAsientos;
+    if (UltimoChequeo) car.UltimoChequeo = UltimoChequeo;
+
+    const estadosValidos = ["Disponible", "Alquilado", "Eliminado", "Mantenimiento"];
+    if (!estadosValidos.includes(estado)) {
+      res.status(400).json({ message: "Estado inválido. Los valores válidos son: 'Disponible', 'Alquilado', 'Eliminado' o 'Mantenimiento'" });
+      return;
+    }
+
+    if (estado) car.estado = estado;
 
     if (tarifas) {
       if (!Array.isArray(tarifas)) {
