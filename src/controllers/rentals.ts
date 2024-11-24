@@ -20,8 +20,24 @@ export const createByEmployee = async (req: express.Request, res: express.Respon
       return;
     }
 
-    if (!autoData || autoData.estado !== "Disponible") {
-      res.status(404).json({ message: "El vehículo no está disponible" });
+    if (!autoData) {
+      res.status(404).json({ message: "El vehículo no se encuentra en" });
+      return;
+    }
+
+    const conflictingRentals = await RentalModel.find({
+      auto,
+      $or: [
+        {
+          fechaInicio: { $lte: new Date(fechaFin) },
+          fechaFin: { $gte: new Date(fechaInicio) },
+        },
+      ],
+      estado: { $in: ["En curso", "Pendiente"] },
+    });
+
+    if (conflictingRentals.length > 0) {
+      res.status(400).json({ message: "El vehículo no está disponible en las fechas seleccionadas" });
       return;
     }
 
@@ -62,8 +78,24 @@ export const createByClient = async (req: express.Request, res: express.Response
       return;
     }
 
-    if (!autoData || autoData.estado !== "Disponible") {
-      res.status(404).json({ message: "El vehículo no está disponible" });
+    if (!autoData) {
+      res.status(404).json({ message: "Vehículo no encontrado" });
+      return;
+    }
+
+    const conflictingRentals = await RentalModel.find({
+      auto,
+      $or: [
+        {
+          fechaInicio: { $lte: new Date(fechaFin) },
+          fechaFin: { $gte: new Date(fechaInicio) },
+        },
+      ],
+      estado: { $in: ["En curso", "Pendiente"] },
+    });
+
+    if (conflictingRentals.length > 0) {
+      res.status(400).json({ message: "El vehículo no está disponible en las fechas seleccionadas" });
       return;
     }
 
@@ -78,7 +110,6 @@ export const createByClient = async (req: express.Request, res: express.Response
 
     res.status(201).json(newRental);
   } catch (error) {
-    console.error("Error al crear el alquiler:", error);
     res.status(500).json({ message: "Error al crear el alquiler" });
   }
 };
