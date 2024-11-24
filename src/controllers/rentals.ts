@@ -3,7 +3,49 @@ import { createRental, getAllRentals, getRentalById, getRentalsByCliente, update
 import { CarModel } from "../db/carsBd";
 import { getUserById } from "../db/usersBd";
 
-export const create = async (req: express.Request, res: express.Response) => {
+export const createByEmployee = async (req: express.Request, res: express.Response) => {
+  try {
+    const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada, total } = req.body;
+
+    if (!cliente || !auto || !fechaInicio || !fechaFin || !tarifaAplicada || !total) {
+      res.status(400).json({ message: "Faltan datos obligatorios" });
+      return;
+    }
+
+    const clienteData = await getUserById(cliente);
+    const autoData = await CarModel.findById(auto);
+
+    if (!clienteData) {
+      res.status(404).json({ message: "Cliente no encontrado" });
+      return;
+    }
+
+    if (!autoData || autoData.estado !== "Disponible") {
+      res.status(404).json({ message: "El vehículo no está disponible" });
+      return;
+    }
+
+    const newRental = await createRental({
+      cliente,
+      auto,
+      fechaInicio: new Date(fechaInicio),
+      fechaFin: new Date(fechaFin),
+      tarifaAplicada,
+      estado: "En curso",
+      total,
+    });
+
+    autoData.estado = "Alquilado";
+    await autoData.save();
+
+    res.status(201).json(newRental);
+  } catch (error) {
+    console.error("Error al crear el alquiler:", error);
+    res.status(500).json({ message: "Error al crear el alquiler" });
+  }
+};
+
+export const createByClient = async (req: express.Request, res: express.Response) => {
   try {
     const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada, total } = req.body;
 
@@ -34,13 +76,43 @@ export const create = async (req: express.Request, res: express.Response) => {
       total,
     });
 
-    autoData.estado = "Alquilado";
-    await autoData.save();
-
     res.status(201).json(newRental);
   } catch (error) {
     console.error("Error al crear el alquiler:", error);
     res.status(500).json({ message: "Error al crear el alquiler" });
+  }
+};
+
+export const setStatusRental = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  try {
+    const rental = await RentalModel.findById(id);
+    if (!rental) {
+      res.status(404).json({ message: "No se encontró el alquiler" });
+      return;
+    }
+
+    if (rental.estado !== "Pendiente") {
+      res.status(400).json({ message: "El alquiler no está en estado pendiente" });
+      return;
+    }
+
+    const auto = await CarModel.findById(rental.auto);
+    if (!auto) {
+      res.status(404).json({ message: "No se encontró el vehículo" });
+      return;
+    }
+
+    auto.estado = "Alquilado";
+    await auto.save();
+
+    rental.estado = "En curso";
+    await rental.save();
+
+    res.status(200).json({ message: "El alquiler se ha actualizado con éxito" });
+  } catch (error) {
+    console.error("Error al obtener el alquiler:", error);
+    res.status(500).json({ message: "Error al obtener el alquiler" });
   }
 };
 

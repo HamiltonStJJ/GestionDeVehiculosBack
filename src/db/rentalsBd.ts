@@ -21,8 +21,8 @@ const RentalSchema = new mongoose.Schema({
   },
   estado: {
     type: String,
-    enum: ["En curso", "Finalizado", "Cancelado"],
-    default: "En curso",
+    enum: ["Pendiente", "En curso", "Finalizado", "Cancelado"],
+    default: "Pendiente",
   },
   total: { type: Number, required: true },
 });
