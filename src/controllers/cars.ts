@@ -1,5 +1,6 @@
 import express from "express";
 import { CarModel } from "../db/carsBd";
+import e from "express";
 
 export const getAllCars = async (req: express.Request, res: express.Response) => {
   try {
@@ -35,6 +36,13 @@ export const getCarByPlaca = async (req: express.Request, res: express.Response)
 export const createCar = async (req: express.Request, res: express.Response) => {
   try {
     const newCar = req.body;
+    const existe = await CarModel.findOne({ placa: newCar.placa });
+
+    if (existe) {
+      res.status(400).json({ message: "El carro ya existe" });
+      return;
+    }
+
     const car = await new CarModel(newCar).save();
     res.status(200).json(car);
   } catch (error) {
