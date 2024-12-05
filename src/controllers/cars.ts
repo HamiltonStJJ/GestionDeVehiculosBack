@@ -53,12 +53,31 @@ export const createCar = async (req: express.Request, res: express.Response) => 
 
 export const deleteCar = async (req: express.Request, res: express.Response) => {
   const { placa } = req.params;
+
   if (!placa) {
-    res.status(400).json({ message: "No se ha encontrado el placa" });
+    res.status(400).json({ message: "No se ha proporcionado la placa" });
     return;
   }
-  await CarModel.findOneAndUpdate({ placa }, { estado: "Eliminado" });
-  res.status(200).json({ message: "El carro se elimino con éxito" });
+
+  try {
+    const car = await CarModel.findOne({ placa });
+
+    if (!car) {
+      res.status(404).json({ message: "Carro no encontrado" });
+      return;
+    }
+
+    if (car.estado === "Alquilado") {
+      res.status(400).json({ message: "No se puede eliminar un carro en estado 'Alquilado'" });
+      return;
+    }
+
+    await CarModel.findOneAndUpdate({ placa }, { estado: "Eliminado" });
+    res.status(200).json({ message: "El carro se eliminó con éxito" });
+  } catch (error) {
+    console.error("Error al eliminar el carro:", error);
+    res.status(400).json({ message: "Error al eliminar el carro" });
+  }
 };
 
 export const updateCar = async (req: express.Request, res: express.Response) => {
