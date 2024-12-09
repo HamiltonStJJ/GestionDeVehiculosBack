@@ -5,7 +5,7 @@ import { isAuthenticated, isAuthorized } from "../middlewares";
 import { addMaintenance, deleteMaintenance, getMaintenance, updateMaintenance } from "../controllers/maintenance";
 
 export default (router: express.Router) => {
-  router.get("/cars", isAuthenticated, getAllCars);
+  router.get("/cars", getAllCars);
   router.get("/cars/:placa", isAuthenticated, getCarByPlaca);
   router.post("/cars", isAuthenticated, isAuthorized(["admin"]), createCar);
   router.put("/cars/:placa", isAuthenticated, updateCar);
