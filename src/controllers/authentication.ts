@@ -6,6 +6,18 @@ import { sendEmail } from "../helpers/mailer";
 import { get } from "lodash";
 import { validateID } from "../helpers/validateID";
 
+export const storeVerificationCode = (res: express.Response, email: string, code: string) => {
+  const cookieName = `verificationCode`;
+  const cookieValue = code;
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "strict" as const,
+    maxAge: 5 * 60 * 1000,
+  };
+
+  res.cookie(cookieName, cookieValue, cookieOptions);
+};
+
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { cedula, nombre, apellido, direccion, telefono, email, password } = req.body;
@@ -27,6 +39,32 @@ export const register = async (req: express.Request, res: express.Response) => {
       return;
     }
 
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await sendEmail(email, `Código verificación`, `Tu código de verificación temporal es: ${verificationCode}`);
+
+    storeVerificationCode(res, email, verificationCode);
+
+    res.status(200).json({ message: "Código de verificación enviado" });
+    return;
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: "Error al crear el usuario" });
+    return;
+  }
+};
+
+export const verifyEmailAndCreateUser = async (req: express.Request, res: express.Response) => {
+  try {
+    const { cedula, nombre, apellido, direccion, telefono, email, password, verificationCode } = req.body;
+
+    const storedCode = req.cookies[`verificationCode`];
+
+    if (!storedCode || storedCode !== verificationCode) {
+      res.status(403).json({ message: "Código de verificación inválido o expirado" });
+      return;
+    }
+
     const salt = random();
     const user = await createUser({
       cedula,
@@ -41,11 +79,9 @@ export const register = async (req: express.Request, res: express.Response) => {
       },
     });
     res.status(200).json(user);
-    return;
   } catch (error) {
-    console.log(error);
-    res.status(400).json({ message: "Error al crear el usuario" });
-    return;
+    console.error(error);
+    res.status(500).json({ message: "Error al verificar y crear el usuario" });
   }
 };
 
@@ -58,9 +94,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    const user = await getUserByEmail(email).select(
-      "+authentication.salt +authentication.password +authentication.isTemporaryPassword"
-    );
+    const user = await getUserByEmail(email).select("+authentication.salt +authentication.password +authentication.isTemporaryPassword");
 
     if (!user) {
       res.status(400).json({ message: "Usuario no encontrado" });
@@ -106,9 +140,7 @@ export const requestPasswordReset = async (req: express.Request, res: express.Re
       return;
     }
 
-    const user = await getUserByEmail(email).select(
-      "+authentication.password +authentication.salt"
-    );
+    const user = await getUserByEmail(email).select("+authentication.password +authentication.salt");
 
     if (!user) {
       res.status(404).json({ message: "Usuario no encontrado" });
@@ -123,11 +155,7 @@ export const requestPasswordReset = async (req: express.Request, res: express.Re
     user.authentication.isTemporaryPassword = true;
     await user.save();
 
-    await sendEmail(
-      user.email,
-      "Restablecimiento de contraseña",
-      `Tu contraseña temporal es: ${temporaryPassword}`
-    );
+    await sendEmail(user.email, "Restablecimiento de contraseña", `Tu contraseña temporal es: ${temporaryPassword}`);
 
     res.status(200).json({ message: "Correo de recuperación enviado" });
   } catch (error) {
