@@ -269,28 +269,22 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       return;
     }
 
-    // Registrar la fecha de devolución
     rental.fechaDevolucion = new Date(fechaDevolucion);
 
-    // Comparar fechas para calcular penalización por retraso
     const fechaEsperada = new Date(rental.fechaFin);
     const fechaReal = new Date(fechaDevolucion);
     let penalizacionPorRetraso = 0;
 
     if (fechaReal > fechaEsperada) {
-      // Penalización por retraso (ejemplo: $50 por día)
       const diasRetraso = Math.ceil((fechaReal.getTime() - fechaEsperada.getTime()) / (1000 * 60 * 60 * 24));
-      penalizacionPorRetraso = diasRetraso * 50; // Asumimos $50 por día de retraso
+      penalizacionPorRetraso = diasRetraso * 50; //! Asumimos $50 por día de retraso
     }
 
-    // Registrar penalización por daños
     rental.penalizacionPorDanios = penalizacionPorDanios || 0;
 
-    // Sumar penalizaciones al total
     rental.penalizacion = penalizacionPorRetraso + rental.penalizacionPorDanios;
     rental.estado = "Finalizado";
 
-    // Actualizar el estado del auto
     auto.estado = "Disponible";
     await auto.save();
 
