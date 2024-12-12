@@ -25,6 +25,9 @@ const RentalSchema = new mongoose.Schema({
     default: "Pendiente",
   },
   total: { type: Number, required: true },
+  fechaDevolucion: { type: Date, default: null },
+  penalizacion: { type: Number, default: 0 },
+  penalizacionPorDanios: { type: Number, default: 0 },
 });
 
 export const RentalModel = mongoose.model("Alquileres", RentalSchema);

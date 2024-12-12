@@ -246,3 +246,62 @@ export const getRentalsByClient = async (req: express.Request, res: express.Resp
     res.status(500).json({ message: "Error al obtener los alquileres del cliente" });
   }
 };
+
+export const returnRental = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  const { fechaDevolucion, penalizacionPorDanios } = req.body;
+
+  try {
+    const rental = await RentalModel.findById(id);
+    if (!rental) {
+      res.status(404).json({ message: "No se encontró el alquiler" });
+      return;
+    }
+
+    if (rental.estado !== "En curso") {
+      res.status(400).json({ message: "El alquiler no está en curso" });
+      return;
+    }
+
+    const auto = await CarModel.findById(rental.auto);
+    if (!auto) {
+      res.status(404).json({ message: "No se encontró el vehículo asociado" });
+      return;
+    }
+
+    // Registrar la fecha de devolución
+    rental.fechaDevolucion = new Date(fechaDevolucion);
+
+    // Comparar fechas para calcular penalización por retraso
+    const fechaEsperada = new Date(rental.fechaFin);
+    const fechaReal = new Date(fechaDevolucion);
+    let penalizacionPorRetraso = 0;
+
+    if (fechaReal > fechaEsperada) {
+      // Penalización por retraso (ejemplo: $50 por día)
+      const diasRetraso = Math.ceil((fechaReal.getTime() - fechaEsperada.getTime()) / (1000 * 60 * 60 * 24));
+      penalizacionPorRetraso = diasRetraso * 50; // Asumimos $50 por día de retraso
+    }
+
+    // Registrar penalización por daños
+    rental.penalizacionPorDanios = penalizacionPorDanios || 0;
+
+    // Sumar penalizaciones al total
+    rental.penalizacion = penalizacionPorRetraso + rental.penalizacionPorDanios;
+    rental.estado = "Finalizado";
+
+    // Actualizar el estado del auto
+    auto.estado = "Disponible";
+    await auto.save();
+
+    await rental.save();
+
+    res.status(200).json({
+      message: "Devolución procesada con éxito",
+      rental,
+    });
+  } catch (error) {
+    console.error("Error al procesar la devolución:", error);
+    res.status(500).json({ message: "Error al procesar la devolución" });
+  }
+};
