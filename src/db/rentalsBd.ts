@@ -28,6 +28,13 @@ const RentalSchema = new mongoose.Schema({
   fechaDevolucion: { type: Date, default: null },
   penalizacion: { type: Number, default: 0 },
   penalizacionPorDanios: { type: Number, default: 0 },
+  piezasRevisadas: [
+    {
+      pieza: { type: String, required: true },
+      estado: { type: String, enum: ["Correcto", "Dañado"], required: true },
+      penalizacion: { type: Number, default: 0 },
+    },
+  ],
 });
 
 export const RentalModel = mongoose.model("Alquileres", RentalSchema);

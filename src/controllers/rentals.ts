@@ -2,6 +2,7 @@ import express from "express";
 import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, RentalModel } from "../db/rentalsBd";
 import { CarModel } from "../db/carsBd";
 import { getUserById } from "../db/usersBd";
+import { piezaPenalizaciones } from "../helpers/damagedParts";
 
 export const createByEmployee = async (req: express.Request, res: express.Response) => {
   try {
@@ -248,54 +249,52 @@ export const getRentalsByClient = async (req: express.Request, res: express.Resp
 };
 
 export const returnRental = async (req: express.Request, res: express.Response) => {
+  type Piezas = keyof typeof piezaPenalizaciones;
   const { id } = req.params;
-  const { fechaDevolucion, penalizacionPorDanios } = req.body;
+  const { piezasRevisadas }: { piezasRevisadas: { pieza: Piezas; estado: "Correcto" | "Dañado" }[] } = req.body;
 
   try {
     const rental = await RentalModel.findById(id);
     if (!rental) {
-      res.status(404).json({ message: "No se encontró el alquiler" });
+      res.status(404).json({ message: "Alquiler no encontrado" });
       return;
     }
 
     if (rental.estado !== "En curso") {
-      res.status(400).json({ message: "El alquiler no está en curso" });
+      res.status(400).json({ message: "El vehículo ya fue devuelto o no está en uso." });
       return;
     }
 
-    const auto = await CarModel.findById(rental.auto);
-    if (!auto) {
-      res.status(404).json({ message: "No se encontró el vehículo asociado" });
-      return;
-    }
+    let penalizacionTotal = 0;
 
-    rental.fechaDevolucion = new Date(fechaDevolucion);
+    const piezasActualizadas = piezasRevisadas.map((pieza) => {
+      const penalizacionPorPieza = pieza.estado === "Dañado" ? piezaPenalizaciones[pieza.pieza] || 0 : 0;
 
-    const fechaEsperada = new Date(rental.fechaFin);
-    const fechaReal = new Date(fechaDevolucion);
-    let penalizacionPorRetraso = 0;
+      penalizacionTotal += penalizacionPorPieza;
 
-    if (fechaReal > fechaEsperada) {
-      const diasRetraso = Math.ceil((fechaReal.getTime() - fechaEsperada.getTime()) / (1000 * 60 * 60 * 24));
-      penalizacionPorRetraso = diasRetraso * 50; //! Asumimos $50 por día de retraso
-    }
+      return {
+        pieza: pieza.pieza,
+        estado: pieza.estado,
+        penalizacion: penalizacionPorPieza,
+      };
+    });
 
-    rental.penalizacionPorDanios = penalizacionPorDanios || 0;
+    rental.set("piezasRevisadas", piezasActualizadas);
 
-    rental.penalizacion = penalizacionPorRetraso + rental.penalizacionPorDanios;
+    rental.fechaDevolucion = new Date();
+    rental.penalizacionPorDanios = penalizacionTotal;
     rental.estado = "Finalizado";
-
-    auto.estado = "Disponible";
-    await auto.save();
+    rental.total += penalizacionTotal;
 
     await rental.save();
 
     res.status(200).json({
-      message: "Devolución procesada con éxito",
+      message: "Vehículo devuelto exitosamente",
       rental,
+      penalizacionTotal,
     });
   } catch (error) {
-    console.error("Error al procesar la devolución:", error);
+    console.error("Error al procesar la devolución del vehículo:", error);
     res.status(500).json({ message: "Error al procesar la devolución" });
   }
 };
