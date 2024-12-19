@@ -265,12 +265,22 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       return;
     }
 
+    const auto = await CarModel.findById(rental.auto);
+    if (!auto) {
+      res.status(404).json({ message: "Vehículo no encontrado" });
+      return;
+    }
+
     let penalizacionTotal = 0;
 
     const piezasActualizadas = piezasRevisadas.map((pieza) => {
-      const penalizacionPorPieza = pieza.estado === "Dañado" ? piezaPenalizaciones[pieza.pieza] || 0 : 0;
+      let penalizacionPorPieza = 0;
 
-      penalizacionTotal += penalizacionPorPieza;
+      if (pieza.estado === "Dañado") {
+        const porcentaje = piezaPenalizaciones[pieza.pieza] || 0;
+        penalizacionPorPieza = (auto.valor * porcentaje) / 100;
+        penalizacionTotal += penalizacionPorPieza;
+      }
 
       return {
         pieza: pieza.pieza,

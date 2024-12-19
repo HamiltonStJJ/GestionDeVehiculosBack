@@ -10,6 +10,7 @@ const CarSchema = new mongoose.Schema({
   imagen: { type: String, required: true },
   placa: { type: String, required: true, unique: true },
   kilometraje: { type: Number, default: 0 },
+  valor: { type: Number, required: true, default: 12000 },
   tipoCombustible: {
     type: String,
     enum: ["Gasolina", "Diesel", "Hibrido", "Electrico"],

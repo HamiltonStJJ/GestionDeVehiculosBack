@@ -1,8 +1,8 @@
 export const piezaPenalizaciones = {
-  Motor: 500,
-  Parabrisas: 200,
-  Puertas: 150,
-  Llantas: 100,
-  "Faros Delanteros": 120,
-  "Faros traseros": 110,
+  Motor: 50,
+  Parabrisas: 20,
+  Puertas: 15,
+  Llantas: 10,
+  "Faros Delanteros": 12,
+  "Faros traseros": 11,
 };
