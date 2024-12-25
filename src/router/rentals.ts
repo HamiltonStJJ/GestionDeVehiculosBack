@@ -1,6 +1,6 @@
 import express from "express";
 import { isAuthenticated, isAuthorized } from "../middlewares";
-import { createByEmployee, getRentals, getRental, updateRental, getRentalsByClient, updateRentalStatus, createByClient, setStatusRental, returnRental } from "../controllers/rentals";
+import { createByEmployee, getRentals, getRental, updateRental, getRentalsByClient, updateRentalStatus, setAuthorized, returnRental, createByClient } from "../controllers/rentals";
 
 export default (router: express.Router) => {
   router.get("/rentals", isAuthenticated, isAuthorized(["admin", "empleado"]), getRentals);
@@ -10,6 +10,6 @@ export default (router: express.Router) => {
   router.post("/rentals/cliente", isAuthenticated, isAuthorized(["cliente"]), createByClient);
   router.put("/rentals/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), updateRental);
   router.put("/rentals/status/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), updateRentalStatus);
-  router.put("/rentals/autorizar/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), setStatusRental);
+  router.put("/rentals/autorizar/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), setAuthorized);
   router.put("/rentals/devolucion/:id", isAuthenticated, isAuthorized(["admin", "empleado"]), returnRental);
 };

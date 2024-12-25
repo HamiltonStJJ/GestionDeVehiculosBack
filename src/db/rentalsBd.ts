@@ -24,7 +24,8 @@ const RentalSchema = new mongoose.Schema({
     enum: ["Pendiente", "En curso", "Finalizado", "Cancelado"],
     default: "Pendiente",
   },
-  total: { type: Number, required: true },
+  garantia: { type: Number, required: true },
+  subtotal: { type: Number, required: true },
   fechaDevolucion: { type: Date, default: null },
   penalizacion: { type: Number, default: 0 },
   penalizacionPorDanios: { type: Number, default: 0 },
@@ -35,6 +36,7 @@ const RentalSchema = new mongoose.Schema({
       penalizacion: { type: Number, default: 0 },
     },
   ],
+  total: { type: Number, required: false, default: 0 }, //suma de subtotal y penalizacion y penalizacionPorDanios+
 });
 
 export const RentalModel = mongoose.model("Alquileres", RentalSchema);

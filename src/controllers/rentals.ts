@@ -1,14 +1,16 @@
 import express from "express";
-import { createRental, getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, RentalModel } from "../db/rentalsBd";
+import { getAllRentals, getRentalById, getRentalsByCliente, updateRentalById, RentalModel } from "../db/rentalsBd";
 import { CarModel } from "../db/carsBd";
 import { getUserById } from "../db/usersBd";
 import { piezaPenalizaciones } from "../helpers/damagedParts";
+import { createPayment } from "./payments";
+import { RateModel } from "../db/RatesBd";
 
 export const createByEmployee = async (req: express.Request, res: express.Response) => {
   try {
-    const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada, total } = req.body;
+    const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada } = req.body;
 
-    if (!cliente || !auto || !fechaInicio || !fechaFin || !tarifaAplicada || !total) {
+    if (!cliente || !auto || !fechaInicio || !fechaFin || !tarifaAplicada) {
       res.status(400).json({ message: "Faltan datos obligatorios" });
       return;
     }
@@ -42,20 +44,21 @@ export const createByEmployee = async (req: express.Request, res: express.Respon
       return;
     }
 
-    const newRental = await createRental({
-      cliente,
-      auto,
-      fechaInicio: new Date(fechaInicio),
-      fechaFin: new Date(fechaFin),
-      tarifaAplicada,
-      estado: "En curso",
-      total,
-    });
+    const valorTarifa = await RateModel.findById(tarifaAplicada);
+    const subtotal = valorTarifa.tarifa * Math.ceil((new Date(fechaFin).getTime() - new Date(fechaInicio).getTime()) / (1000 * 60 * 60 * 24));
 
-    autoData.estado = "Alquilado";
-    await autoData.save();
+    const garantia = subtotal * 0.3;
 
-    res.status(201).json(newRental);
+    const datosRenta = { cliente, auto, fechaInicio: new Date(fechaInicio), fechaFin: new Date(fechaFin), tarifaAplicada, estado: "En curso", subtotal, garantia };
+
+    const responsePayment = await createPayment(garantia, "USD", `Pago inicial por el alquiler del vehículo ${autoData.nombre}`, datosRenta);
+
+    if (!responsePayment) {
+      res.status(500).json({ message: "Error al procesar el pago" });
+      return;
+    }
+
+    res.status(200).json(responsePayment.links[1].href);
   } catch (error) {
     console.error("Error al crear el alquiler:", error);
     res.status(500).json({ message: "Error al crear el alquiler" });
@@ -64,9 +67,9 @@ export const createByEmployee = async (req: express.Request, res: express.Respon
 
 export const createByClient = async (req: express.Request, res: express.Response) => {
   try {
-    const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada, total } = req.body;
+    const { cliente, auto, fechaInicio, fechaFin, tarifaAplicada } = req.body;
 
-    if (!cliente || !auto || !fechaInicio || !fechaFin || !tarifaAplicada || !total) {
+    if (!cliente || !auto || !fechaInicio || !fechaFin || !tarifaAplicada) {
       res.status(400).json({ message: "Faltan datos obligatorios" });
       return;
     }
@@ -80,7 +83,7 @@ export const createByClient = async (req: express.Request, res: express.Response
     }
 
     if (!autoData) {
-      res.status(404).json({ message: "Vehículo no encontrado" });
+      res.status(404).json({ message: "El vehículo no se encuentra en" });
       return;
     }
 
@@ -100,22 +103,23 @@ export const createByClient = async (req: express.Request, res: express.Response
       return;
     }
 
-    const newRental = await createRental({
-      cliente,
-      auto,
-      fechaInicio: new Date(fechaInicio),
-      fechaFin: new Date(fechaFin),
-      tarifaAplicada,
-      total,
-    });
+    const valorTarifa = await RateModel.findById(tarifaAplicada);
+    const subtotal = valorTarifa.tarifa * Math.ceil((new Date(fechaFin).getTime() - new Date(fechaInicio).getTime()) / (1000 * 60 * 60 * 24));
 
-    res.status(201).json(newRental);
+    const garantia = subtotal * 0.3;
+
+    const datosRenta = { cliente, auto, fechaInicio: new Date(fechaInicio), fechaFin: new Date(fechaFin), tarifaAplicada, estado: "Pendiente", subtotal, garantia };
+
+    const createRental = await RentalModel.create(datosRenta);
+
+    res.status(200).json(createRental);
   } catch (error) {
+    console.error("Error al crear el alquiler:", error);
     res.status(500).json({ message: "Error al crear el alquiler" });
   }
 };
 
-export const setStatusRental = async (req: express.Request, res: express.Response) => {
+export const setAuthorized = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const rental = await RentalModel.findById(id);
@@ -135,13 +139,15 @@ export const setStatusRental = async (req: express.Request, res: express.Respons
       return;
     }
 
-    auto.estado = "Alquilado";
-    await auto.save();
+    const datosRentaID = { _id: rental._id, estado: rental.estado, auto: rental.auto };
 
-    rental.estado = "En curso";
-    await rental.save();
+    const responsePayment = await createPayment(rental.garantia, "USD", `Pago inicial por el alquiler del vehículo ${auto.nombre}`, datosRentaID);
 
-    res.status(200).json({ message: "El alquiler se ha actualizado con éxito" });
+    if (!responsePayment) {
+      res.status(500).json({ message: "Error al procesar el pago" });
+      return;
+    }
+    res.status(200).json(responsePayment.links[1].href);
   } catch (error) {
     console.error("Error al obtener el alquiler:", error);
     res.status(500).json({ message: "Error al obtener el alquiler" });
@@ -181,8 +187,8 @@ export const updateRentalStatus = async (req: express.Request, res: express.Resp
   const { estado } = req.body;
 
   try {
-    if (!["cancelado", "finalizado"].includes(estado)) {
-      res.status(400).json({ error: "Estado inválido. Usa 'cancelado' o 'finalizado'." });
+    if (!["Cancelado", "Finalizado"].includes(estado)) {
+      res.status(400).json({ error: "Estado inválido. Usa 'Cancelado' o 'Finalizado'." });
       return;
     }
 
@@ -294,7 +300,7 @@ export const returnRental = async (req: express.Request, res: express.Response) 
     rental.fechaDevolucion = new Date();
     rental.penalizacionPorDanios = penalizacionTotal;
     rental.estado = "Finalizado";
-    rental.total += penalizacionTotal;
+    rental.subtotal += penalizacionTotal;
 
     await rental.save();
 

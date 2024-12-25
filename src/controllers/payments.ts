@@ -1,6 +1,9 @@
-import express from "express";
+import express, { application } from "express";
 import dotenv from "dotenv";
 import https from "https";
+import { createRental, RentalModel } from "../db/rentalsBd";
+import { CarModel } from "../db/carsBd";
+import { updateRental } from "./rentals";
 
 dotenv.config();
 
@@ -8,7 +11,6 @@ const paypalClientId = process.env.PAYPAL_CLIENT_ID || "";
 const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || "";
 const paypalApiUrl = process.env.PAYPAL_API_URL || "";
 
-// Método para obtener el token de acceso
 const getAccessToken = async (): Promise<string> => {
   const credentials = Buffer.from(`${paypalClientId}:${paypalClientSecret}`).toString("base64");
 
@@ -49,15 +51,9 @@ const getAccessToken = async (): Promise<string> => {
   });
 };
 
-// Crear un nuevo pago
-export const createPayment = async (req: express.Request, res: express.Response) => {
-  const { total, currency, description } = req.body;
+let rentalDataTemp: any = {};
 
-  if (!total || !currency || !description) {
-    res.status(400).json({ message: "Faltan parámetros obligatorios" });
-    return;
-  }
-
+export const createPayment = async (total: number, currency: string, description: string, rentalData: any) => {
   try {
     const accessToken = await getAccessToken();
 
@@ -72,6 +68,12 @@ export const createPayment = async (req: express.Request, res: express.Response)
           description,
         },
       ],
+      application_context: {
+        brand_name: "Flexi Drive",
+        user_action: "PAY_NOW",
+        return_url: `${process.env.HOST}/payments/capture`,
+        cancel_url: `${process.env.HOST}/payments/cancel`,
+      },
     });
 
     const options = {
@@ -86,21 +88,17 @@ export const createPayment = async (req: express.Request, res: express.Response)
 
     const paymentResponse = await makeHttpRequest(options, paymentBody);
 
-    res.status(200).json(paymentResponse);
+    rentalDataTemp = rentalData;
+
+    return paymentResponse;
   } catch (error) {
     console.error("Error al crear el pago:", error);
-    res.status(500).json({ message: "Error al crear el pago", error });
+    return;
   }
 };
 
-// Capturar un pago
 export const capturePayment = async (req: express.Request, res: express.Response) => {
-  const { orderId } = req.params;
-
-  if (!orderId) {
-    res.status(400).json({ message: "El ID del pedido es obligatorio" });
-    return;
-  }
+  const { token } = req.query;
 
   try {
     const accessToken = await getAccessToken();
@@ -108,7 +106,7 @@ export const capturePayment = async (req: express.Request, res: express.Response
     const options = {
       method: "POST",
       hostname: new URL(paypalApiUrl).hostname,
-      path: `/v2/checkout/orders/${orderId}/capture`,
+      path: `/v2/checkout/orders/${token}/capture`,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
@@ -117,14 +115,35 @@ export const capturePayment = async (req: express.Request, res: express.Response
 
     const captureResponse = await makeHttpRequest(options);
 
-    res.status(200).json(captureResponse);
+    if (captureResponse.status !== "COMPLETED") {
+      res.status(500).json({ message: "Error en el pago" });
+      return;
+    }
+
+    if (rentalDataTemp.estado === "En curso") {
+      const newRental = await createRental(rentalDataTemp);
+      const autoData = await CarModel.findById(rentalDataTemp.auto);
+      autoData.estado = "Alquilado";
+      await autoData.save();
+      console.log("Redireccionar a rentas");
+    }
+
+    if (rentalDataTemp._id) {
+      const rentalData = await RentalModel.findById(rentalDataTemp._id);
+      rentalData.estado = "En curso";
+      await rentalData.save();
+      const autoData = await CarModel.findById(rentalDataTemp.auto);
+      autoData.estado = "Alquilado";
+      await autoData.save();
+      console.log("Redireccionar a rentas de cliente");
+    }
+
+    res.status(200).json({ message: "Pago capturado y renta creada exitosamente" });
   } catch (error) {
-    console.error("Error al capturar el pago:", error);
     res.status(500).json({ message: "Error al capturar el pago", error });
   }
 };
 
-// Función auxiliar para realizar solicitudes HTTP
 const makeHttpRequest = (options: https.RequestOptions, body?: string): Promise<any> => {
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
@@ -154,4 +173,9 @@ const makeHttpRequest = (options: https.RequestOptions, body?: string): Promise<
 
     req.end();
   });
+};
+
+export const cancelPayment = async (req: express.Request, res: express.Response) => {
+  res.status(200).json({ message: "Pago cancelado" });
+  // res.redirect("/");
 };
