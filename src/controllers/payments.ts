@@ -120,6 +120,7 @@ export const capturePayment = async (req: express.Request, res: express.Response
       return;
     }
 
+    // Desde el empleado
     if (rentalDataTemp.estado === "En curso") {
       const newRental = await createRental(rentalDataTemp);
       const autoData = await CarModel.findById(rentalDataTemp.auto);
@@ -128,6 +129,7 @@ export const capturePayment = async (req: express.Request, res: express.Response
       console.log("Redireccionar a rentas");
     }
 
+    // Desde el cliente
     if (rentalDataTemp._id) {
       const rentalData = await RentalModel.findById(rentalDataTemp._id);
       rentalData.estado = "En curso";
@@ -138,7 +140,24 @@ export const capturePayment = async (req: express.Request, res: express.Response
       console.log("Redireccionar a rentas de cliente");
     }
 
-    res.status(200).json({ message: "Pago capturado y renta creada exitosamente" });
+    //Para devolución del auto
+    if (rentalDataTemp.idDevolucion) {
+      const rentalData = await RentalModel.findById(rentalDataTemp.idDevolucion);
+      const autoData = await CarModel.findById(rentalData.auto);
+
+      rentalData.set("piezasRevisadas", rentalDataTemp.piezasRevisadas);
+      rentalData.fechaDevolucion = rentalDataTemp.fechaDevolucion;
+      rentalData.penalizacionPorDanios = rentalDataTemp.valorDanios;
+      rentalData.penalizacionPorDias = rentalDataTemp.valorDias;
+      rentalData.estado = "Finalizado";
+      rentalData.total = rentalDataTemp.total;
+      autoData.estado = "Disponible";
+
+      await rentalData.save();
+      await autoData.save();
+    }
+
+    res.status(200).json({ message: "Pago capturado y devolución finalizada exitosamente" });
   } catch (error) {
     res.status(500).json({ message: "Error al capturar el pago", error });
   }

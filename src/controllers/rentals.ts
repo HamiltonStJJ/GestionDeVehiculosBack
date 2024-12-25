@@ -277,7 +277,7 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       return;
     }
 
-    let penalizacionTotal = 0;
+    let valorDanios = 0;
 
     const piezasActualizadas = piezasRevisadas.map((pieza) => {
       let penalizacionPorPieza = 0;
@@ -285,7 +285,7 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       if (pieza.estado === "Dañado") {
         const porcentaje = piezaPenalizaciones[pieza.pieza] || 0;
         penalizacionPorPieza = (auto.valor * porcentaje) / 100;
-        penalizacionTotal += penalizacionPorPieza;
+        valorDanios += penalizacionPorPieza;
       }
 
       return {
@@ -295,20 +295,38 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       };
     });
 
-    rental.set("piezasRevisadas", piezasActualizadas);
+    let valorDias = 0;
 
-    rental.fechaDevolucion = new Date();
-    rental.penalizacionPorDanios = penalizacionTotal;
-    rental.estado = "Finalizado";
-    rental.subtotal += penalizacionTotal;
+    const fechaDevolucionEsperada = rental.fechaFin;
+    const fechaDevolucionActual = new Date();
+    const diferenciaDias = Math.ceil((fechaDevolucionActual.getTime() - fechaDevolucionEsperada.getTime()) / (1000 * 60 * 60 * 24));
+    let penalizacionPorDiasExtra = 0;
 
-    await rental.save();
+    if (diferenciaDias > 0) {
+      const costoPorDiaExtra = auto.valor * 0.05;
+      penalizacionPorDiasExtra = diferenciaDias * costoPorDiaExtra;
+      valorDias += penalizacionPorDiasExtra;
+    }
 
-    res.status(200).json({
-      message: "Vehículo devuelto exitosamente",
-      rental,
-      penalizacionTotal,
-    });
+    const restante = rental.subtotal + valorDanios + valorDias - rental.garantia;
+
+    const datosDevolucion = {
+      idDevolucion: id,
+      piezasRevisadas: piezasActualizadas,
+      fechaDevolucion: fechaDevolucionActual,
+      valorDanios: valorDanios,
+      valorDias: valorDias,
+      estado: "Finalizado",
+      total: rental.subtotal + valorDanios + valorDias,
+    };
+
+    const responsePayment = await createPayment(restante, "USD", `Pago final por el alquiler del vehículo ${auto.nombre}`, datosDevolucion);
+
+    if (!responsePayment) {
+      res.status(500).json({ message: "Error al procesar el pago" });
+      return;
+    }
+    res.status(200).json(responsePayment.links[1].href);
   } catch (error) {
     console.error("Error al procesar la devolución del vehículo:", error);
     res.status(500).json({ message: "Error al procesar la devolución" });

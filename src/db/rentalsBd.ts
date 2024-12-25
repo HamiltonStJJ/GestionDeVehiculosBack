@@ -27,7 +27,7 @@ const RentalSchema = new mongoose.Schema({
   garantia: { type: Number, required: true },
   subtotal: { type: Number, required: true },
   fechaDevolucion: { type: Date, default: null },
-  penalizacion: { type: Number, default: 0 },
+  penalizacionPorDias: { type: Number, default: 0 },
   penalizacionPorDanios: { type: Number, default: 0 },
   piezasRevisadas: [
     {
@@ -36,7 +36,7 @@ const RentalSchema = new mongoose.Schema({
       penalizacion: { type: Number, default: 0 },
     },
   ],
-  total: { type: Number, required: false, default: 0 }, //suma de subtotal y penalizacion y penalizacionPorDanios+
+  total: { type: Number, required: false, default: 0 },
 });
 
 export const RentalModel = mongoose.model("Alquileres", RentalSchema);
