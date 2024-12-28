@@ -5,6 +5,7 @@ import { getUserById } from "../db/usersBd";
 import { piezaPenalizaciones } from "../helpers/damagedParts";
 import { createPayment } from "./payments";
 import { RateModel } from "../db/RatesBd";
+import { sendEmail } from "../helpers/mailer";
 
 export const createByEmployee = async (req: express.Request, res: express.Response) => {
   try {
@@ -58,7 +59,9 @@ export const createByEmployee = async (req: express.Request, res: express.Respon
       return;
     }
 
-    res.status(200).json(responsePayment.links[1].href);
+    const send = await sendEmail(clienteData.email, `Pago inicial por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+
+    res.status(200).json({ message: "Pago inicial enviado al cliente " + send });
   } catch (error) {
     console.error("Error al crear el alquiler:", error);
     res.status(500).json({ message: "Error al crear el alquiler" });
@@ -147,7 +150,12 @@ export const setAuthorized = async (req: express.Request, res: express.Response)
       res.status(500).json({ message: "Error al procesar el pago" });
       return;
     }
-    res.status(200).json(responsePayment.links[1].href);
+
+    const clienteData = await getUserById(rental.cliente.toString());
+
+    const send = await sendEmail(clienteData.email, `Pago inicial por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+
+    res.status(200).json({ message: "Pago enviado al cliente " + send });
   } catch (error) {
     console.error("Error al obtener el alquiler:", error);
     res.status(500).json({ message: "Error al obtener el alquiler" });
@@ -326,7 +334,12 @@ export const returnRental = async (req: express.Request, res: express.Response) 
       res.status(500).json({ message: "Error al procesar el pago" });
       return;
     }
-    res.status(200).json(responsePayment.links[1].href);
+
+    const clienteData = await getUserById(rental.cliente.toString());
+
+    const send = await sendEmail(clienteData.email, `Pago final por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+
+    res.status(200).json({ message: "Pago enviado al cliente " + send });
   } catch (error) {
     console.error("Error al procesar la devolución del vehículo:", error);
     res.status(500).json({ message: "Error al procesar la devolución" });
