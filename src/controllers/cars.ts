@@ -1,6 +1,6 @@
 import express from "express";
 import { CarModel } from "../db/carsBd";
-import e from "express";
+import { RentalModel } from "../db/rentalsBd";
 
 export const getAllCars = async (req: express.Request, res: express.Response) => {
   try {
@@ -171,5 +171,36 @@ export const updateCarStatus = async (req: express.Request, res: express.Respons
   } catch (error) {
     console.error("Error al actualizar el estado del carro:", error);
     res.status(500).json({ message: "Error al actualizar el estado del carro" });
+  }
+};
+
+export const getCarsByStateAndDate = async (req: express.Request, res: express.Response) => {
+  try {
+    const { fechaInicio, fechaFin } = req.query;
+
+    if (!fechaInicio || !fechaFin) {
+      res.status(400).json({ message: "Los parámetros 'fechaInicio' y 'fechaFin' son obligatorios." });
+      return;
+    }
+
+    const fechaInicioDate = new Date(fechaInicio as string);
+    const fechaFinDate = new Date(fechaFin as string);
+
+    if (isNaN(fechaInicioDate.getTime()) || isNaN(fechaFinDate.getTime())) {
+      res.status(400).json({ message: "Las fechas proporcionadas no son válidas." });
+      return;
+    }
+
+    const rentedCars = await RentalModel.find({
+      $or: [{ fechaInicio: { $lte: fechaFinDate }, fechaFin: { $gte: fechaInicioDate } }],
+      estado: { $in: ["En curso", "Pendiente"] },
+    }).distinct("auto");
+
+    const availableCars = await CarModel.find({ _id: { $nin: rentedCars } });
+
+    res.status(200).json(availableCars);
+  } catch (error) {
+    console.error("Error al obtener los vehículos disponibles:", error);
+    res.status(500).json({ message: "Error al obtener los vehículos disponibles." });
   }
 };
