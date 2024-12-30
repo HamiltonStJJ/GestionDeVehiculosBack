@@ -127,6 +127,7 @@ export const capturePayment = async (req: express.Request, res: express.Response
       autoData.estado = "Alquilado";
       await autoData.save();
       console.log("Redireccionar a rentas");
+      
     }
 
     // Desde el cliente

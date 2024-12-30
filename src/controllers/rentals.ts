@@ -124,41 +124,73 @@ export const createByClient = async (req: express.Request, res: express.Response
 
 export const setAuthorized = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
+
   try {
+    // Buscar el alquiler por ID
     const rental = await RentalModel.findById(id);
     if (!rental) {
       res.status(404).json({ message: "No se encontró el alquiler" });
       return;
     }
 
+    // Verificar si el estado del alquiler es "Pendiente"
     if (rental.estado !== "Pendiente") {
       res.status(400).json({ message: "El alquiler no está en estado pendiente" });
       return;
     }
 
+    // Buscar el vehículo asociado al alquiler
     const auto = await CarModel.findById(rental.auto);
     if (!auto) {
       res.status(404).json({ message: "No se encontró el vehículo" });
       return;
     }
 
+    // Preparar datos para el pago
     const datosRentaID = { _id: rental._id, estado: rental.estado, auto: rental.auto };
 
-    const responsePayment = await createPayment(rental.garantia, "USD", `Pago inicial por el alquiler del vehículo ${auto.nombre}`, datosRentaID);
+    // Crear el pago
+    const responsePayment = await createPayment(
+      rental.garantia,
+      "USD",
+      `Pago inicial por el alquiler del vehículo ${auto.nombre}`,
+      datosRentaID
+    );
+    console.log("Respuesta completa de la API de PayPal:", responsePayment);
 
-    if (!responsePayment) {
+    if (!responsePayment || !responsePayment.links || !responsePayment.links[1]?.href) {
+      console.error("Error con responsePayment o enlaces de PayPal:", responsePayment);
       res.status(500).json({ message: "Error al procesar el pago" });
       return;
     }
 
-    const clienteData = await getUserById(rental.cliente.toString());
+    // Obtener el enlace de pago
+    const paymentLink = responsePayment.links[1].href;
+    console.log("Enlace de pago generado correctamente:", paymentLink);
 
-    const send = await sendEmail(clienteData.email, `Pago inicial por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+    // Obtener los datos del cliente
+    const clienteData = await getUserById(rental.cliente?.toString());
+    if (!clienteData || !clienteData.email) {
+      res.status(404).json({ message: "No se encontró el cliente o no tiene un email válido" });
+      return;
+    }
 
-    res.status(200).json({ message: "Pago enviado al cliente " + send });
+    // Enviar el email al cliente con el enlace de pago
+    const send = await sendEmail(
+      clienteData.email,
+      `Pago inicial por alquiler del auto ${auto.nombre}`,
+      `Enlace para el pago inicial: ${paymentLink}`
+    );
+
+    // Responder al cliente con la información del email y el enlace de pago
+    res.status(200).json({
+      message: "Pago procesado y enviado al cliente con éxito",
+      paymentLink,
+      emailStatus: send,
+    });
   } catch (error) {
-    console.error("Error al obtener el alquiler:", error);
-    res.status(500).json({ message: "Error al obtener el alquiler" });
+    console.error("Error al procesar el alquiler:", error);
+    res.status(500).json({ message: "Error al procesar el alquiler" });
   }
 };
 
