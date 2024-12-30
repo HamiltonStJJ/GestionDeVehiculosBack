@@ -156,7 +156,6 @@ export const setAuthorized = async (req: express.Request, res: express.Response)
       `Pago inicial por el alquiler del vehículo ${auto.nombre}`,
       datosRentaID
     );
-    console.log("Respuesta completa de la API de PayPal:", responsePayment);
 
     if (!responsePayment || !responsePayment.links || !responsePayment.links[1]?.href) {
       console.error("Error con responsePayment o enlaces de PayPal:", responsePayment);
@@ -369,9 +368,25 @@ export const returnRental = async (req: express.Request, res: express.Response) 
 
     const clienteData = await getUserById(rental.cliente.toString());
 
-    const send = await sendEmail(clienteData.email, `Pago final por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+    
+    const send = await sendEmail(clienteData.email, `Pago final por alquiler del auto ${auto.nombre}`, "Enlace para el pago: " + responsePayment.links[1].href);
 
-    res.status(200).json({ message: "Pago enviado al cliente " + send });
+  res.status(200).json({
+  message: "Pago enviado al cliente " + clienteData.nombre + " " + send,
+  rentalDetails: {
+    auto: {
+      nombre: auto.nombre,
+      valor: auto.valor,
+    },
+    piezasRevisadas: piezasActualizadas,
+    valorDanios,
+    valorDias,
+    total: rental.subtotal + valorDanios + valorDias,
+    restante,
+    fechaDevolucion: fechaDevolucionActual,
+  },
+});
+
   } catch (error) {
     console.error("Error al procesar la devolución del vehículo:", error);
     res.status(500).json({ message: "Error al procesar la devolución" });
