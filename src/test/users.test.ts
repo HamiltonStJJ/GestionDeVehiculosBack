@@ -1,9 +1,4 @@
-import {
-  getAllUsers,
-  updateUser,
-  deleteUser,
-  getUser,
-} from "../controllers/users";
+import { getAllUsers, updateUser, deleteUser, getUser } from "../controllers/users";
 import { getUsers, deleteUserByCedula, getUserByCedula } from "../db/usersBd";
 import { Request, Response } from "express";
 
@@ -45,7 +40,9 @@ describe("Controlador de usuarios", () => {
 
       (getUserByCedula as jest.Mock).mockResolvedValue(userMock);
       req.params = { cedula: "1" };
+
       await getUser(req as Request, res as Response);
+
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(userMock);
     });
@@ -66,6 +63,7 @@ describe("Controlador de usuarios", () => {
       req.params = { cedula: "999" };
 
       await getUser(req as Request, res as Response);
+
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         message: "Usuario no encontrado",
@@ -74,15 +72,9 @@ describe("Controlador de usuarios", () => {
   });
 
   describe("Actualización de usuario", () => {
-    beforeEach(() => {
-      req = { params: { cedula: "1" }, body: {} };
-      res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-    });
-
     it("Debería retornar 400 si no se proporcionan datos para actualizar", async () => {
+      req = { params: { cedula: "1" }, body: {} };
+
       await updateUser(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -93,7 +85,7 @@ describe("Controlador de usuarios", () => {
 
     it("Debería retornar 404 si el usuario no se encuentra", async () => {
       (getUserByCedula as jest.Mock).mockResolvedValue(null);
-      req.body = { nombre: "Nuevo Nombre" };
+      req = { params: { cedula: "1" }, body: { nombre: "Nuevo Nombre" } };
 
       await updateUser(req as Request, res as Response);
 
@@ -106,21 +98,26 @@ describe("Controlador de usuarios", () => {
     it("Debería actualizar el usuario y retornar status 200", async () => {
       const userMock = {
         nombre: "Old Name",
+        apellido: "Old Last Name",
         save: jest.fn().mockResolvedValue(true),
       };
       (getUserByCedula as jest.Mock).mockResolvedValue(userMock);
-      req.body = { nombre: "Nuevo Nombre" };
+      req = {
+        params: { cedula: "1" },
+        body: { nombre: "Nuevo Nombre", apellido: "Nuevo Apellido" },
+      };
 
       await updateUser(req as Request, res as Response);
 
       expect(userMock.nombre).toBe("Nuevo Nombre");
+      expect(userMock.apellido).toBe("Nuevo Apellido");
       expect(userMock.save).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(userMock);
     });
 
     it("Debería capturar errores y retornar status 400", async () => {
-      req.body = { nombre: "Nuevo Nombre" };
+      req = { params: { cedula: "1" }, body: { nombre: "Nuevo Nombre" } };
 
       (getUserByCedula as jest.Mock).mockRejectedValue(new Error("Error"));
 
@@ -134,17 +131,10 @@ describe("Controlador de usuarios", () => {
   });
 
   describe("Eliminación de usuario", () => {
-    beforeEach(() => {
-      req = { params: { cedula: "1" } };
-      res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-    });
-
     it("Debería eliminar un usuario y retornar status 200", async () => {
       const deleteUserMock = { message: "Usuario eliminado" };
       (deleteUserByCedula as jest.Mock).mockResolvedValue(deleteUserMock);
+      req = { params: { cedula: "1" } };
 
       await deleteUser(req as Request, res as Response);
 
@@ -153,6 +143,7 @@ describe("Controlador de usuarios", () => {
 
     it("Debería capturar errores y retornar status 400", async () => {
       (deleteUserByCedula as jest.Mock).mockRejectedValue(new Error("Error"));
+      req = { params: { cedula: "1" } };
 
       await deleteUser(req as Request, res as Response);
 
