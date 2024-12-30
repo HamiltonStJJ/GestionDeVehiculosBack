@@ -59,7 +59,7 @@ export const createByEmployee = async (req: express.Request, res: express.Respon
       return;
     }
 
-    const send = await sendEmail(clienteData.email, `Pago inicial por alquiler del auto ${auto.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
+    const send = await sendEmail(clienteData.email, `Pago inicial por alquiler del auto ${autoData.nombre}`, "Enlace para el pago inicial: " + responsePayment.links[1].href);
 
     res.status(200).json({ message: "Pago inicial enviado al cliente " + send });
   } catch (error) {
