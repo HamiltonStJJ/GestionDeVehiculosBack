@@ -176,11 +176,10 @@ export const updateCarStatus = async (req: express.Request, res: express.Respons
 
 export const getCarsByStateAndDate = async (req: express.Request, res: express.Response) => {
   try {
-    const { fechaInicio, fechaFin } = req.query;
+    const { fechaInicio, fechaFin, estado } = req.query;
 
     if (!fechaInicio || !fechaFin) {
       res.status(400).json({ message: "Los parámetros 'fechaInicio' y 'fechaFin' son obligatorios." });
-      return;
     }
 
     const fechaInicioDate = new Date(fechaInicio as string);
@@ -188,19 +187,23 @@ export const getCarsByStateAndDate = async (req: express.Request, res: express.R
 
     if (isNaN(fechaInicioDate.getTime()) || isNaN(fechaFinDate.getTime())) {
       res.status(400).json({ message: "Las fechas proporcionadas no son válidas." });
-      return;
     }
+
+    const estadosPermitidos = estado ? (estado as string).split(",") : ["Disponible"];
 
     const rentedCars = await RentalModel.find({
       $or: [{ fechaInicio: { $lte: fechaFinDate }, fechaFin: { $gte: fechaInicioDate } }],
       estado: { $in: ["En curso", "Pendiente"] },
     }).distinct("auto");
 
-    const availableCars = await CarModel.find({ _id: { $nin: rentedCars } });
+    const filteredCars = await CarModel.find({
+      _id: { $nin: rentedCars },
+      estado: { $in: estadosPermitidos },
+    });
 
-    res.status(200).json(availableCars);
+    res.status(200).json(filteredCars);
   } catch (error) {
-    console.error("Error al obtener los vehículos disponibles:", error);
-    res.status(500).json({ message: "Error al obtener los vehículos disponibles." });
+    console.error("Error al obtener los vehículos filtrados:", error);
+    res.status(500).json({ message: "Error al obtener los vehículos filtrados." });
   }
 };
