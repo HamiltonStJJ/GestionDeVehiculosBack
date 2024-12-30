@@ -184,26 +184,37 @@ export const getCarsByStateAndDate = async (req: express.Request, res: express.R
 
     const fechaInicioDate = new Date(fechaInicio as string);
     const fechaFinDate = new Date(fechaFin as string);
+    fechaFinDate.setHours(23, 59, 59, 999);
 
     if (isNaN(fechaInicioDate.getTime()) || isNaN(fechaFinDate.getTime())) {
       res.status(400).json({ message: "Las fechas proporcionadas no son válidas." });
     }
 
-    const estadosPermitidos = estado ? (estado as string).split(",") : ["Disponible"];
+    const estadoFiltro = estado ? (estado as string).split(",") : ["Disponible", "Alquilado"];
 
     const rentedCars = await RentalModel.find({
-      $or: [{ fechaInicio: { $lte: fechaFinDate }, fechaFin: { $gte: fechaInicioDate } }],
-      estado: { $in: ["En curso", "Pendiente"] },
-    }).distinct("auto");
+      $and: [{ fechaInicio: { $lt: fechaFinDate } }, { fechaFin: { $gt: fechaInicioDate } }, { estado: { $in: ["En curso"] } }],
+    })
+      .populate("auto")
+      .distinct("auto");
 
-    const filteredCars = await CarModel.find({
-      _id: { $nin: rentedCars },
-      estado: { $in: estadosPermitidos },
-    });
+    let cars;
+    if (estadoFiltro.includes("Disponible")) {
+      cars = await CarModel.find({
+        _id: { $nin: rentedCars },
+        // estado: "Disponible",
+      });
+    } else if (estadoFiltro.includes("Alquilado")) {
+      cars = await CarModel.find({
+        _id: { $in: rentedCars },
+      });
+    } else {
+      res.status(400).json({ message: "El parámetro 'estado' debe ser 'Disponible' o 'Alquilado'." });
+    }
 
-    res.status(200).json(filteredCars);
+    res.status(200).json(cars);
   } catch (error) {
-    console.error("Error al obtener los vehículos filtrados:", error);
-    res.status(500).json({ message: "Error al obtener los vehículos filtrados." });
+    console.error("Error al obtener los autos:", error);
+    res.status(500).json({ message: "Error al obtener los autos." });
   }
 };
