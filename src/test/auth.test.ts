@@ -1,11 +1,5 @@
-import {
-  register,
-  login,
-  requestPasswordReset,
-  changePassword,
-  logout,
-} from "../controllers/authentication";
-import { getUserByEmail, createUser, getUserById } from "../db/usersBd";
+import { register, login, requestPasswordReset, changePassword, logout, verifyEmailAndCreateUser } from "../controllers/authentication";
+import { getUserByEmail, createUser, getUserById, getUserByCedula } from "../db/usersBd";
 import { authentication, random } from "../helpers/password";
 import { generateTemporaryPassword } from "../helpers/temporaryPassword";
 import { sendEmail } from "../helpers/mailer";
@@ -69,7 +63,7 @@ describe("Controlador de autenticación de usuarios", () => {
       };
       await register(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ id: "userId" });
+      expect(res.json).toHaveBeenCalledWith({ message: "Código de verificación enviado" });
     });
   });
 
@@ -130,9 +124,7 @@ describe("Controlador de autenticación de usuarios", () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(mockUser),
       });
-      (authentication as jest.Mock)
-        .mockImplementationOnce(() => "hashedpassword")
-        .mockImplementationOnce(() => "sessionToken");
+      (authentication as jest.Mock).mockImplementationOnce(() => "hashedpassword").mockImplementationOnce(() => "sessionToken");
 
       await login(req, res);
 
@@ -159,9 +151,7 @@ describe("Controlador de autenticación de usuarios", () => {
       (getUserByEmail as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(mockUser),
       });
-      (authentication as jest.Mock)
-        .mockImplementationOnce(() => "hashedpassword")
-        .mockImplementationOnce(() => "sessionToken");
+      (authentication as jest.Mock).mockImplementationOnce(() => "hashedpassword").mockImplementationOnce(() => "sessionToken");
 
       await login(req, res);
 
@@ -218,11 +208,7 @@ describe("Controlador de autenticación de usuarios", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Correo de recuperación enviado",
       });
-      expect(sendEmail).toHaveBeenCalledWith(
-        "test@example.com",
-        "Restablecimiento de contraseña",
-        "Tu contraseña temporal es: tempPassword"
-      );
+      expect(sendEmail).toHaveBeenCalledWith("test@example.com", "Restablecimiento de contraseña", "Tu contraseña temporal es: tempPassword");
     });
   });
 
@@ -267,6 +253,109 @@ describe("Controlador de autenticación de usuarios", () => {
       expect(res.clearCookie).toHaveBeenCalledWith("auth");
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ message: "Sesión cerrada" });
+    });
+  });
+
+  describe("Controlador de autenticación - Nuevas funcionalidades", () => {
+    describe("Registro con código de verificación", () => {
+      it("Debería retornar 402 si la cédula no es válida", async () => {
+        req.body = {
+          email: "test@example.com",
+          password: "password",
+          nombre: "nombre",
+          cedula: "123", // Cédula inválida
+          apellido: "apellido",
+          direccion: "dir",
+          telefono: "12345",
+        };
+
+        await register(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(402);
+        expect(res.json).toHaveBeenCalledWith({ message: "El cedula no es válida" });
+      });
+
+      it("Debería enviar un código de verificación si los datos son válidos", async () => {
+        (getUserByEmail as jest.Mock).mockResolvedValue(null);
+        (getUserByCedula as jest.Mock).mockResolvedValue(null);
+        (sendEmail as jest.Mock).mockResolvedValue(true);
+
+        req.body = {
+          email: "test@example.com",
+          password: "password",
+          nombre: "nombre",
+          cedula: "1718137159",
+          apellido: "apellido",
+          direccion: "dir",
+          telefono: "12345",
+        };
+
+        await register(req, res);
+
+        expect(sendEmail).toHaveBeenCalledWith("test@example.com", "Código verificación", expect.stringContaining("Tu código de verificación temporal es:"));
+        expect(res.cookie).toHaveBeenCalledWith("verificationCode", expect.any(String), expect.objectContaining({ maxAge: 5 * 60 * 1000 }));
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({ message: "Código de verificación enviado" });
+      });
+    });
+
+    describe("Verificar email y crear usuario", () => {
+      it("Debería retornar 403 si el código de verificación es inválido o ha expirado", async () => {
+        req.body = {
+          email: "test@example.com",
+          password: "password",
+          verificationCode: "123456",
+        };
+
+        req.cookies = {
+          verificationCode: "654321", // Código incorrecto
+        };
+
+        await verifyEmailAndCreateUser(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+          message: "Código de verificación inválido o expirado",
+        });
+      });
+
+      it("Debería crear un usuario si el código de verificación es válido", async () => {
+        req.body = {
+          email: "test@example.com",
+          password: "password",
+          cedula: "1718137159",
+          nombre: "nombre",
+          apellido: "apellido",
+          direccion: "dir",
+          telefono: "12345",
+          verificationCode: "123456",
+        };
+
+        req.cookies = {
+          verificationCode: "123456", // Código correcto
+        };
+
+        const mockUser = { id: "userId" };
+
+        (createUser as jest.Mock).mockResolvedValue(mockUser);
+
+        await verifyEmailAndCreateUser(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(mockUser);
+        expect(createUser).toHaveBeenCalledWith({
+          cedula: "1718137159",
+          nombre: "nombre",
+          apellido: "apellido",
+          direccion: "dir",
+          telefono: "12345",
+          email: "test@example.com",
+          authentication: {
+            salt: expect.any(String),
+            password: expect.any(String),
+          },
+        });
+      });
     });
   });
 });

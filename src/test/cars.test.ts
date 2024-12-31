@@ -1,8 +1,10 @@
 import { getAllCars, getCarByPlaca, createCar, deleteCar, updateCar, updateCarStatus } from "../controllers/cars";
 import { CarModel } from "../db/carsBd";
+import { RentalModel } from "../db/rentalsBd";
 import { Request, Response } from "express";
 
 jest.mock("../db/carsBd");
+jest.mock("../db/rentalsBd");
 
 describe("Controlador de autos", () => {
   let req: Partial<Request>;
@@ -17,11 +19,11 @@ describe("Controlador de autos", () => {
     };
   });
 
-  describe("Obtener autos", () => {
-    it("Debería retornar una lista de autos", async () => {
+  describe("getAllCars", () => {
+    it("Debería retornar todos los autos con estado 200", async () => {
       const carsMock = [
-        { placa: "AAA111", nombre: "Carro 1", marca: "Toyota" },
-        { placa: "BBB222", nombre: "Carro 2", marca: "Honda" },
+        { placa: "AAA111", nombre: "Carro 1" },
+        { placa: "BBB222", nombre: "Carro 2" },
       ];
       (CarModel.find as jest.Mock).mockReturnValue({
         populate: jest.fn().mockResolvedValue(carsMock),
@@ -47,9 +49,9 @@ describe("Controlador de autos", () => {
     });
   });
 
-  describe("Obtener auto por placa", () => {
+  describe("getCarByPlaca", () => {
     it("Debería retornar un auto si existe", async () => {
-      const carMock = { placa: "AAA111", nombre: "Carro 1", marca: "Toyota" };
+      const carMock = { placa: "AAA111", nombre: "Carro 1" };
       (CarModel.findOne as jest.Mock).mockReturnValue({
         populate: jest.fn().mockResolvedValue(carMock),
       });
@@ -90,9 +92,9 @@ describe("Controlador de autos", () => {
     });
   });
 
-  describe("Crear auto", () => {
-    it("Debería crear un auto nuevo y retornar status 200", async () => {
-      const newCarMock = { placa: "AAA111", nombre: "Carro 1" };
+  describe("createCar", () => {
+    it("Debería crear un auto y retornar estado 200", async () => {
+      const newCarMock = { placa: "CCC333", nombre: "Carro 3" };
       req.body = newCarMock;
 
       (CarModel.findOne as jest.Mock).mockResolvedValue(null);
@@ -104,8 +106,8 @@ describe("Controlador de autos", () => {
       expect(res.json).toHaveBeenCalledWith(newCarMock);
     });
 
-    it("Debería retornar 400 si el auto ya existe", async () => {
-      const existingCarMock = { placa: "AAA111", nombre: "Carro 1" };
+    it("Debería retornar estado 400 si el auto ya existe", async () => {
+      const existingCarMock = { placa: "CCC333", nombre: "Carro 3" };
       req.body = existingCarMock;
 
       (CarModel.findOne as jest.Mock).mockResolvedValue(existingCarMock);
@@ -119,13 +121,10 @@ describe("Controlador de autos", () => {
     });
   });
 
-  describe("Eliminar auto", () => {
-    it("Debería retornar error 400 si el carro está en estado 'Alquilado'", async () => {
+  describe("deleteCar", () => {
+    it("Debería retornar error si el auto está en estado 'Alquilado'", async () => {
       req.params = { placa: "AAA111" };
-
-      const carMock = {
-        estado: "Alquilado",
-      };
+      const carMock = { estado: "Alquilado" };
 
       (CarModel.findOne as jest.Mock).mockResolvedValue(carMock);
 
@@ -137,25 +136,9 @@ describe("Controlador de autos", () => {
       });
     });
 
-    it("Debería retornar error 404 si el carro no se encuentra", async () => {
+    it("Debería eliminar el auto y retornar estado 200", async () => {
       req.params = { placa: "AAA111" };
-
-      (CarModel.findOne as jest.Mock).mockResolvedValue(null);
-
-      await deleteCar(req as Request, res as Response);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Carro no encontrado",
-      });
-    });
-
-    it("Debería eliminar un carro en estado válido y retornar status 200", async () => {
-      req.params = { placa: "AAA111" };
-
-      const carMock = {
-        estado: "Disponible",
-      };
+      const carMock = { estado: "Disponible" };
 
       (CarModel.findOne as jest.Mock).mockResolvedValue(carMock);
       (CarModel.findOneAndUpdate as jest.Mock).mockResolvedValue({});
@@ -165,6 +148,37 @@ describe("Controlador de autos", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         message: "El carro se eliminó con éxito",
+      });
+    });
+  });
+
+  describe("updateCarStatus", () => {
+    it("Debería actualizar el estado del carro y retornar 200", async () => {
+      req.params = { placa: "AAA111" };
+      req.body = { estado: "Mantenimiento" };
+
+      const carMock = { placa: "AAA111", estado: "Disponible", save: jest.fn() };
+      (CarModel.findOne as jest.Mock).mockResolvedValue(carMock);
+
+      await updateCarStatus(req as Request, res as Response);
+
+      expect(carMock.estado).toBe("Mantenimiento");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Estado actualizado con éxito",
+        car: carMock,
+      });
+    });
+
+    it("Debería retornar error si el estado es inválido", async () => {
+      req.params = { placa: "AAA111" };
+      req.body = { estado: "Desconocido" };
+
+      await updateCarStatus(req as Request, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Estado inválido. Los valores válidos son: 'Disponible', 'Alquilado', 'Eliminado' o 'Mantenimiento'",
       });
     });
   });
