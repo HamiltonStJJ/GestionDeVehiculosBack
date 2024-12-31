@@ -203,11 +203,11 @@ export const getCarsByStateAndDate = async (req: express.Request, res: express.R
       cars = await CarModel.find({
         _id: { $nin: rentedCars },
         // estado: "Disponible",
-      });
+      }).populate("tarifas");
     } else if (estadoFiltro.includes("Alquilado")) {
       cars = await CarModel.find({
         _id: { $in: rentedCars },
-      });
+      }).populate("tarifas");
     } else {
       res.status(400).json({ message: "El parámetro 'estado' debe ser 'Disponible' o 'Alquilado'." });
     }
