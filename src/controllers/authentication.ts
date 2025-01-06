@@ -12,7 +12,8 @@ export const storeVerificationCode = (res: express.Response, email: string, code
   const cookieOptions = {
     httpOnly: true,
     sameSite: "strict" as const,
-    maxAge: 5 * 60 * 1000,
+    secure: true,
+    // maxAge: 5 * 60 * 1000,
   };
 
   res.cookie(cookieName, cookieValue, cookieOptions);
