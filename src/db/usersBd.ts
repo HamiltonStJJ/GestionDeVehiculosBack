@@ -54,7 +54,7 @@ export const UserModel = mongoose.model("Usuarios", UsersSchema);
 
 export const getUsers = () => UserModel.find();
 
-export const getUserByEmail = (email: string) => UserModel.findOne({ email });
+export const getUserByEmail = (email: string) => UserModel.findOne({ email, estado: "activo" });
 
 export const getUserBySessionToken = (sessionToken: string) =>
   UserModel.findOne({
@@ -63,8 +63,7 @@ export const getUserBySessionToken = (sessionToken: string) =>
 
 export const getUserById = (id: string) => UserModel.findById(id);
 
-export const getUserByCedula = (cedula: string) =>
-  UserModel.findOne({ cedula, estado: "activo" });
+export const getUserByCedula = (cedula: string) => UserModel.findOne({ cedula, estado: "activo" });
 
 //? Métodos de inserción
 
@@ -77,10 +76,6 @@ export const createUser = async (values: Record<string, any>) => {
   }
 };
 
-export const deleteUserByCedula = (cedula: string) =>
-  UserModel.findOneAndUpdate({ cedula }, { estado: "desactivado" });
+export const deleteUserByCedula = (cedula: string) => UserModel.findOneAndUpdate({ cedula }, { estado: "desactivado" });
 
-export const updateUserByCedula = (
-  cedula: string,
-  values: Record<string, any>
-) => UserModel.findOneAndUpdate({ cedula }, values);
+export const updateUserByCedula = (cedula: string, values: Record<string, any>) => UserModel.findOneAndUpdate({ cedula }, values);
