@@ -2,11 +2,7 @@ import express from "express";
 import { get, identity, merge } from "lodash";
 import { getUserBySessionToken } from "../db/usersBd";
 
-export const isAuthenticated = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
+export const isAuthenticated = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     const sessionToken = req.cookies["auth"];
 
@@ -32,11 +28,7 @@ export const isAuthenticated = async (
   }
 };
 
-export const isOwner = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
+export const isOwner = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     const { id } = req.params;
     const currentUser = get(req, "identity._id") as string;
@@ -46,7 +38,7 @@ export const isOwner = async (
       return;
     }
 
-    if (currentUser.toString() !== id) {
+    if (currentUser.toString() === id) {
       res.sendStatus(403);
       return;
     }
@@ -60,11 +52,7 @@ export const isOwner = async (
 };
 
 export const isAuthorized = (roles: string[]) => {
-  return async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const currentUserRole = get(req, "identity.rol") as string;
 
