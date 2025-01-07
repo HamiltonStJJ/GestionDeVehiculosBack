@@ -55,18 +55,20 @@ pipeline {
     }
 
     stage('Deploy Application') {
-        steps {
-            script {
-            withCredentials([string(credentialsId: 'my_env_vars', variable: 'ENV_VARS')]) {
-                sh """
-                echo "\$ENV_VARS" > .env
-                docker run -d --env-file .env -p ${host_port}:${container_port} --name ${container_name} ${image_name}:${tag_image}
-                """
-            }
-            }
-        }
-    }
+      steps {
+        script {
+          withCredentials([string(credentialsId: 'my_env_vars', variable: 'ENV_VARS')]) {
+            sh """
+            # Guardar las variables en el archivo .env
+            echo "\$ENV_VARS" > .env
 
+            # Desplegar contenedor con el archivo .env
+            docker run -d --env-file .env -p ${host_port}:${container_port} --name ${container_name} ${image_name}:${tag_image}
+            """
+          }
+        }
+      }
+    }
   }
 
   post {
