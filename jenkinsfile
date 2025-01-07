@@ -1,0 +1,83 @@
+pipeline {
+  agent any
+
+  tools {
+    nodejs "node"
+  }
+
+  parameters {
+    string(name: 'container_name', defaultValue: 'pagina_web', description: 'Nombre del contenedor de docker.')
+    string(name: 'image_name', defaultValue: 'pagina_img', description: 'Nombre de la imagen docker.')
+    string(name: 'tag_image', defaultValue: 'lts', description: 'Tag de la imagen de la página.')
+    string(name: 'container_port', defaultValue: '3000', description: 'Puerto que usa el contenedor (de tu app).')
+    string(name: 'host_port', defaultValue: '80', description: 'Puerto que expondrá el contenedor en el host.')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'develop', url: 'https://github.com/HamiltonStJJ/GestionDeVehiculosBack.git'
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm install'
+      }
+    }
+
+    stage('Run Tests') {
+      steps {
+        sh 'npm run test'
+      }
+    }
+
+    stage('Build Application') {
+      steps {
+        sh 'npm run build'
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          try {
+            sh "docker stop ${container_name} || true"
+            sh "docker rm ${container_name} || true"
+            sh "docker rmi ${image_name}:${tag_image} || true"
+          } catch (Exception e) {
+            echo "Ocurrió un error limpiando imágenes o contenedores antiguos: ${e}"
+          }
+        }
+
+        sh "docker build -t ${image_name}:${tag_image} ."
+      }
+    }
+
+    stage('Deploy Application') {
+        steps {
+            script {
+            withCredentials([string(credentialsId: 'my_env_vars', variable: 'ENV_VARS')]) {
+                sh """
+                echo "\$ENV_VARS" > .env
+                docker run -d --env-file .env -p ${host_port}:${container_port} --name ${container_name} ${image_name}:${tag_image}
+                """
+            }
+            }
+        }
+    }
+
+  }
+
+  post {
+    always {
+      echo 'Pipeline terminado.'
+    }
+    success {
+      echo 'Pipeline completado exitosamente.'
+    }
+    failure {
+      echo 'Pipeline fallido.'
+    }
+  }
+}
