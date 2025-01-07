@@ -57,15 +57,23 @@ pipeline {
     stage('Deploy Application') {
       steps {
         script {
-          withCredentials([string(credentialsId: 'my_env_vars', variable: 'ENV_VARS')]) {
-            sh """
-            # Guardar las variables en el archivo .env
-            echo "\$ENV_VARS" > .env
+          // Crear el archivo .env dinámicamente con todas las variables
+          sh '''
+            echo "URL_MONGODB=mongodb+srv://sharpblade:89MdbKg0KY5fZ0cL@gestiondevehiculosbd.ear3e.mongodb.net/?retryWrites=true&w=majority&appName=GestionDeVehiculosBD" > .env
+            echo "PORT=3000" >> .env
+            echo "HOST=http://localhost:3000" >> .env
+            echo "CORREO=lopezedwin3binfo@gmail.com" >> .env
+            echo "PASS_EMAIL=faqp mnzl pyeh hkmi" >> .env
+            echo "ORIGIN=http://localhost:3001" >> .env
+            echo "PAYPAL_CLIENT_ID=AaCizuisYc1p-7Po9frogysvANoze_O_TbMXVDHQgYoUX7DTdDvgWZnGMvK_QgIk4GnPQ1zgeWiIfXhq" >> .env
+            echo "PAYPAL_CLIENT_SECRET=EAAI4g_AnbVjkzG672_DCG3-SYYaeOxQwD8mv73DH8ZrllQbN5ecbOMWhAmXn3cMG1MdighrFV2bL26G" >> .env
+            echo "PAYPAL_API_URL=https://api-m.sandbox.paypal.com" >> .env
+          '''
 
-            # Desplegar contenedor con el archivo .env
+          // Desplegar el contenedor con el archivo .env
+          sh """
             docker run -d --env-file .env -p ${host_port}:${container_port} --name ${container_name} ${image_name}:${tag_image}
-            """
-          }
+          """
         }
       }
     }
