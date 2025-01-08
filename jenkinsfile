@@ -26,6 +26,12 @@ pipeline {
       }
     }
 
+  // stage('Run Tests') {
+  //   steps {
+  //     sh 'npm run test'
+  //   }
+  // }
+
     stage('Build Application') {
       steps {
         sh 'npm run build'
