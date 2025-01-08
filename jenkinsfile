@@ -35,33 +35,34 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          // Crear el Dockerfile dinámicamente
-         sh '''
-          cat > Dockerfile <<EOF
-          FROM node:16
+          // Crear un Dockerfile directamente usando echo en vez de heredoc
+          sh '''
+            echo "FROM node:16" > Dockerfile
+            echo "" >> Dockerfile
+            echo "# Establecer el directorio de trabajo" >> Dockerfile
+            echo "WORKDIR /app" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Copiar package.json y package-lock.json" >> Dockerfile
+            echo "COPY package*.json ./" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Instalar dependencias" >> Dockerfile
+            echo "RUN npm install" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Copiar el resto del código al contenedor" >> Dockerfile
+            echo "COPY . ." >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Compilar el código TypeScript" >> Dockerfile
+            echo "RUN npm run build" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Exponer el puerto de la aplicación" >> Dockerfile
+            echo "EXPOSE ${container_port}" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Comando para iniciar la aplicación" >> Dockerfile
+            echo "CMD [\\\"npm\\\", \\\"start\\\"]" >> Dockerfile
+          '''
 
-          # Establecer el directorio de trabajo
-          WORKDIR /app
-
-          # Copiar package.json y package-lock.json
-          COPY package*.json ./
-
-          # Instalar dependencias
-          RUN npm install
-
-          # Copiar el resto del código al contenedor
-          COPY . .
-
-          # Compilar el código TypeScript
-          RUN npm run build
-
-          # Exponer el puerto de la aplicación
-          EXPOSE ${container_port}
-
-          # Comando para iniciar la aplicación
-          CMD ["npm", "start"]
-        EOF
-        '''
+          // Verificar el contenido del Dockerfile
+          sh 'cat Dockerfile'
 
           // Limpiar contenedores e imágenes antiguos
           try {
@@ -69,10 +70,10 @@ pipeline {
             sh "docker rm ${container_name} || true"
             sh "docker rmi ${image_name}:${tag_image} || true"
           } catch (Exception e) {
-            echo "Ocurrió un error limpiando imágenes o contenedores antiguos: ${e}"
+            echo "Error limpiando contenedores e imágenes antiguas: ${e}"
           }
 
-          // Construir la imagen Docker
+          // Construir la nueva imagen Docker
           sh "docker build -t ${image_name}:${tag_image} ."
         }
       }
