@@ -36,32 +36,32 @@ pipeline {
       steps {
         script {
           // Crear el Dockerfile dinámicamente
-          sh '''
-            cat > Dockerfile <<EOF
-            FROM node:16
+         sh '''
+          cat > Dockerfile <<EOF
+          FROM node:16
 
-            # Establecer el directorio de trabajo
-            WORKDIR /app
+          # Establecer el directorio de trabajo
+          WORKDIR /app
 
-            # Copiar package.json y package-lock.json
-            COPY package*.json ./
+          # Copiar package.json y package-lock.json
+          COPY package*.json ./
 
-            # Instalar dependencias
-            RUN npm install
+          # Instalar dependencias
+          RUN npm install
 
-            # Copiar el resto del código al contenedor
-            COPY . .
+          # Copiar el resto del código al contenedor
+          COPY . .
 
-            # Compilar el código TypeScript
-            RUN npm run build
+          # Compilar el código TypeScript
+          RUN npm run build
 
-            # Exponer el puerto de la aplicación
-            EXPOSE ${container_port}
+          # Exponer el puerto de la aplicación
+          EXPOSE ${container_port}
 
-            # Comando para iniciar la aplicación
-            CMD ["npm", "start"]
-            EOF
-          '''
+          # Comando para iniciar la aplicación
+          CMD ["npm", "start"]
+        EOF
+        '''
 
           // Limpiar contenedores e imágenes antiguos
           try {
