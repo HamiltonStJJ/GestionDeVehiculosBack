@@ -26,12 +26,6 @@ pipeline {
       }
     }
 
-    // stage('Run Tests') {
-    //   steps {
-    //     sh 'npm run test'
-    //   }
-    // }
-
     stage('Build Application') {
       steps {
         sh 'npm run build'
@@ -41,6 +35,21 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
+          // Crear el Dockerfile dinámicamente
+          sh '''
+            cat > Dockerfile <<EOF
+            FROM node:16
+            WORKDIR /app
+            COPY package*.json ./
+            RUN npm install
+            COPY . .
+            RUN npm run build
+            EXPOSE ${container_port}
+            CMD ["npm", "start"]
+            EOF
+          '''
+
+          // Limpiar contenedores e imágenes antiguos
           try {
             sh "docker stop ${container_name} || true"
             sh "docker rm ${container_name} || true"
@@ -48,9 +57,10 @@ pipeline {
           } catch (Exception e) {
             echo "Ocurrió un error limpiando imágenes o contenedores antiguos: ${e}"
           }
-        }
 
-        sh "docker build -t ${image_name}:${tag_image} ."
+          // Construir la imagen Docker
+          sh "docker build -t ${image_name}:${tag_image} ."
+        }
       }
     }
 
