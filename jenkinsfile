@@ -41,7 +41,6 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          // Crear un Dockerfile directamente usando echo en vez de heredoc
           sh '''
             echo "FROM node:16" > Dockerfile
             echo "" >> Dockerfile
@@ -67,10 +66,8 @@ pipeline {
             echo "CMD [\\\"npm\\\", \\\"start\\\"]" >> Dockerfile
           '''
 
-          // Verificar el contenido del Dockerfile
           sh 'cat Dockerfile'
 
-          // Limpiar contenedores e imágenes antiguos
           try {
             sh "docker stop ${container_name} || true"
             sh "docker rm ${container_name} || true"
@@ -79,7 +76,6 @@ pipeline {
             echo "Error limpiando contenedores e imágenes antiguas: ${e}"
           }
 
-          // Construir la nueva imagen Docker
           sh "docker build -t ${image_name}:${tag_image} ."
         }
       }
