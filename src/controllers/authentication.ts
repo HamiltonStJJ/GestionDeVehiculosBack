@@ -9,11 +9,12 @@ import { validateID } from "../helpers/validateID";
 export const storeVerificationCode = (res: express.Response, email: string, code: string) => {
   const cookieName = `verificationCode`;
   const cookieValue = code;
+  const isProduction = process.env.PROD === "production";
   const cookieOptions = {
     httpOnly: true,
-    sameSite: "strict" as const,
-    secure: true,
-    // maxAge: 5 * 60 * 1000,
+    sameSite: isProduction ? ("none" as const) : ("strict" as const),
+    secure: isProduction,
+    maxAge: 24 * 60 * 60 * 1000,
   };
 
   res.cookie(cookieName, cookieValue, cookieOptions);
