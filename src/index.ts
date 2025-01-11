@@ -7,6 +7,7 @@ import cors from "cors";
 import compression from "compression";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import router from "./router";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const mongoUrl = process.env.URL_MONGODB;
 
 app.use(
   cors({
+    origin: process.env.ORIGIN,
     credentials: true,
   })
 );
@@ -27,8 +29,7 @@ app.use(bodyParser.json());
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  //ESTA FUNCION ES PARA QUE EL PUERTO 8080
-  console.log(`La aplicacion esta corriendo en http://localhost:${port}}`);
+  console.log(`La aplicacion esta corriendo en http://localhost:${port}`);
 });
 
 if (!mongoUrl) {
@@ -44,5 +45,7 @@ mongoose
     console.error("Error conectando a MongoDB:", error);
     process.exit(1);
   });
+
+app.use("/", router());
 
 export default app;

@@ -1,0 +1,106 @@
+pipeline {
+  agent any
+
+  tools {
+    nodejs "node"
+  }
+
+  parameters {
+    string(name: 'container_name', defaultValue: 'pagina_web', description: 'Nombre del contenedor de docker.')
+    string(name: 'image_name', defaultValue: 'pagina_img', description: 'Nombre de la imagen docker.')
+    string(name: 'tag_image', defaultValue: 'lts', description: 'Tag de la imagen de la página.')
+    string(name: 'container_port', defaultValue: '3000', description: 'Puerto que usa el contenedor (de tu app).')
+    string(name: 'host_port', defaultValue: '80', description: 'Puerto que expondrá el contenedor en el host.')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'develop', url: 'https://github.com/HamiltonStJJ/GestionDeVehiculosBack.git'
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm install'
+      }
+    }
+
+  // stage('Run Tests') {
+  //   steps {
+  //     sh 'npm run test'
+  //   }
+  // }
+
+    stage('Build Application') {
+      steps {
+        sh 'npm run build'
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          sh '''
+            echo "FROM node:16" > Dockerfile
+            echo "" >> Dockerfile
+            echo "# Establecer el directorio de trabajo" >> Dockerfile
+            echo "WORKDIR /app" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Copiar package.json y package-lock.json" >> Dockerfile
+            echo "COPY package*.json ./" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Instalar dependencias" >> Dockerfile
+            echo "RUN npm install" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Copiar el resto del código al contenedor" >> Dockerfile
+            echo "COPY . ." >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Compilar el código TypeScript" >> Dockerfile
+            echo "RUN npm run build" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Exponer el puerto de la aplicación" >> Dockerfile
+            echo "EXPOSE ${container_port}" >> Dockerfile
+            echo "" >> Dockerfile
+            echo "# Comando para iniciar la aplicación" >> Dockerfile
+            echo "CMD [\\\"npm\\\", \\\"start\\\"]" >> Dockerfile
+          '''
+
+          sh 'cat Dockerfile'
+
+          try {
+            sh "docker stop ${container_name} || true"
+            sh "docker rm ${container_name} || true"
+            sh "docker rmi ${image_name}:${tag_image} || true"
+          } catch (Exception e) {
+            echo "Error limpiando contenedores e imágenes antiguas: ${e}"
+          }
+
+          sh "docker build -t ${image_name}:${tag_image} ."
+        }
+      }
+    }
+
+    stage('Deploy Application') {
+      steps {
+        script {
+          sh """
+            docker run -d -p ${host_port}:${container_port} --name ${container_name} ${image_name}:${tag_image}
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo 'Pipeline terminado.'
+    }
+    success {
+      echo 'Pipeline completado exitosamente.'
+    }
+    failure {
+      echo 'Pipeline fallido.'
+    }
+  }
+}
