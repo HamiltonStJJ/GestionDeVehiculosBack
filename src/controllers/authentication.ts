@@ -116,7 +116,15 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     await user.save();
 
-    res.cookie("auth", user.authentication.sessionToken);
+    const isProduction = process.env.PROD === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: isProduction ? ("none" as const) : ("strict" as const),
+      secure: isProduction,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+
+    res.cookie("auth", user.authentication.sessionToken, cookieOptions);
 
     if (user.authentication.isTemporaryPassword) {
       console.log("Debes cambiar tu contraseña temporal");
