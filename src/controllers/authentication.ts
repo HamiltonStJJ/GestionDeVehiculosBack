@@ -119,7 +119,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const isProduction = process.env.PROD === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite: isProduction? "none" as const: "strict" as const,
+      sameSite: isProduction ? ("none" as const) : ("strict" as const),
       secure: isProduction,
       maxAge: 24 * 60 * 60 * 1000,
     };
@@ -201,11 +201,12 @@ export const changePassword = async (req: express.Request, res: express.Response
 };
 
 export const logout = async (req: express.Request, res: express.Response) => {
+  const isProduction = process.env.NODE_ENV === "production";
   try {
     res.clearCookie("auth", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "none" as const,
+      sameSite: isProduction ? ("none" as const) : ("strict" as const),
     });
     res.status(200).json({ message: "Sesión cerrada" });
   } catch (error) {
