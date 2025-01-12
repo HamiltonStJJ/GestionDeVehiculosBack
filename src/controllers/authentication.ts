@@ -119,7 +119,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const isProduction = process.env.PROD === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite: isProduction ? ("none" as const) : ("strict" as const),
+      sameSite: "none" as const,
       secure: isProduction,
       maxAge: 24 * 60 * 60 * 1000,
     };

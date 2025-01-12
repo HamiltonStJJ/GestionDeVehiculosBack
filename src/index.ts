@@ -15,9 +15,17 @@ const app = express();
 const port = process.env.PORT;
 const mongoUrl = process.env.URL_MONGODB;
 
+const allowedOrigins = ["https://frontgestion.vercel.app", "https://frontgestion-628ylkl4l-sharpblades-projects.vercel.app", "http://localhost:3000"];
+
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
