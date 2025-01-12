@@ -202,12 +202,14 @@ export const changePassword = async (req: express.Request, res: express.Response
 
 export const logout = async (req: express.Request, res: express.Response) => {
   try {
-    res.clearCookie("auth");
+    res.clearCookie("auth", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none" as const,
+    });
     res.status(200).json({ message: "Sesión cerrada" });
-    return;
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Error al cerrar la sesión" });
-    return;
   }
 };
