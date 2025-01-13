@@ -1,10 +1,7 @@
 import express from "express";
-import { getUsers, deleteUserByCedula, getUserByCedula } from "../db/usersBd";
+import { getUsers, deleteUserByCedula, getUserByCedula, getUserByCedulaSinEstado } from "../db/usersBd";
 
-export const getAllUsers = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const getAllUsers = async (req: express.Request, res: express.Response) => {
   try {
     const users = await getUsers();
     res.status(200).json(users);
@@ -33,29 +30,17 @@ export const getUser = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const updateUser = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const updateUser = async (req: express.Request, res: express.Response) => {
   try {
     const { cedula } = req.params;
-    const { nombre, apellido, direccion, telefono, email, rol, estado } =
-      req.body;
+    const { nombre, apellido, direccion, telefono, email, rol, estado } = req.body;
 
-    if (
-      !nombre &&
-      !apellido &&
-      !direccion &&
-      !telefono &&
-      !email &&
-      !rol &&
-      !estado
-    ) {
+    if (!nombre && !apellido && !direccion && !telefono && !email && !rol && !estado) {
       res.status(400).json({ message: "No hay datos para actualizar" });
       return;
     }
 
-    const user = await getUserByCedula(cedula);
+    const user = await getUserByCedulaSinEstado(cedula);
 
     if (!user) {
       res.status(404).json({ message: "Usuario no encontrado" });
@@ -78,10 +63,7 @@ export const updateUser = async (
   }
 };
 
-export const deleteUser = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const deleteUser = async (req: express.Request, res: express.Response) => {
   try {
     const { cedula } = req.params;
     const deleteUser = await deleteUserByCedula(cedula);

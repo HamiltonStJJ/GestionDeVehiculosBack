@@ -65,6 +65,8 @@ export const getUserById = (id: string) => UserModel.findById(id);
 
 export const getUserByCedula = (cedula: string) => UserModel.findOne({ cedula, estado: "activo" });
 
+export const getUserByCedulaSinEstado = (cedula: string) => UserModel.findOne({ cedula });
+
 //? Métodos de inserción
 
 export const createUser = async (values: Record<string, any>) => {
