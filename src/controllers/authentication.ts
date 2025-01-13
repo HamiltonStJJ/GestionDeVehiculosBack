@@ -1,6 +1,6 @@
 import express from "express";
 import { authentication, random } from "../helpers/password";
-import { getUserByEmail, createUser, getUserById, getUserByCedula } from "../db/usersBd";
+import { getUserByEmail, createUser, getUserById, getUserByCedula, getUserBySessionToken } from "../db/usersBd";
 import { generateTemporaryPassword } from "../helpers/temporaryPassword";
 import { sendEmail } from "../helpers/mailer";
 import { get } from "lodash";
@@ -103,6 +103,11 @@ export const login = async (req: express.Request, res: express.Response) => {
       return;
     }
 
+    if (user.isLoggedIn) {
+      res.status(403).json({ message: "El usuario ya tiene una sesión activa" });
+      return;
+    }
+
     const expectedHash = authentication(user.authentication.salt, password);
 
     if (user.authentication.password !== expectedHash) {
@@ -113,6 +118,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const salt = random();
 
     user.authentication.sessionToken = authentication(salt, user._id.toString());
+    user.isLoggedIn = true;
 
     await user.save();
 
@@ -203,12 +209,32 @@ export const changePassword = async (req: express.Request, res: express.Response
 export const logout = async (req: express.Request, res: express.Response) => {
   const isProduction = process.env.NODE_ENV === "production";
   try {
+    const sessionToken = req.cookies.auth;
+
+    if (!sessionToken) {
+      res.status(400).json({ message: "No hay una sesión activa" });
+      return;
+    }
+
+    const user = await getUserBySessionToken(sessionToken);
+
+    if (!user) {
+      res.status(400).json({ message: "Sesión no válida" });
+      return;
+    }
+
+    user.authentication.sessionToken = null;
+    user.isLoggedIn = false;
+
+    await user.save();
+
     res.clearCookie("auth", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: isProduction ? ("none" as const) : ("strict" as const),
     });
-    res.status(200).json({ message: "Sesión cerrada" });
+
+    res.status(200).json({ message: "Sesión cerrada correctamente" });
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Error al cerrar la sesión" });

@@ -36,6 +36,10 @@ const UsersSchema = new mongoose.Schema({
       select: false,
     },
   },
+  isLoggedIn: {
+    type: Boolean,
+    default: false,
+  },
   rol: {
     type: String,
     enum: ["admin", "empleado", "cliente"],
